@@ -5,6 +5,7 @@ import arc.ApplicationListener;
 import arc.Core;
 import arc.Events;
 import arc.func.Prov;
+import arc.struct.ObjectIntMap;
 import arc.struct.Seq;
 import arc.util.Log;
 import arc.util.Reflect;
@@ -40,11 +41,13 @@ public class PacketManager {
     private static boolean initialized;
     private static Seq<ClassEntry<?>> registeredPackets;
     private static ClassEntry<?>[] packets;
+    private static ObjectIntMap<Class<?>> packetIDs;
     private static int constantPackets;
 
     static {
         registeredPackets = new Seq<>();
         packets = new ClassEntry[8];
+        packetIDs = new ObjectIntMap<>();
         constantPackets = packets.length;
 
         Registrator.ClassEntry[] classes = Registrator.getClasses();
@@ -118,13 +121,7 @@ public class PacketManager {
     }
 
     public static short getID(@NotNull Class<?> type) {
-        for(int i = 0; i < packets.length; i++) {
-            ClassEntry<?> entry = packets[i];
-            if(entry != null && entry.type == type) {
-                return (short) i;
-            }
-        }
-        return -1;
+        return (short) packetIDs.get(type, -1);
     }
 
     @Nullable
@@ -135,6 +132,7 @@ public class PacketManager {
     public static void onClientConnect() {
         // Remove the modded packets to avoid them being sent until the server send a sync packet
         packets = Arrays.copyOf(packets, constantPackets);
+        updatePacketIDs();
     }
 
     public static void onServerHost() {
@@ -147,6 +145,7 @@ public class PacketManager {
         for(int i = 0; i < registeredPackets.size; i++) {
             packets[constantPackets + i] = registeredPackets.get(i);
         }
+        updatePacketIDs();
     }
 
     private static void onServerConnect(NetConnection connection, Packets.ConnectPacket packet) {
@@ -180,6 +179,7 @@ public class PacketManager {
                 String name = stream.readUTF();
                 packets[i] = registeredPackets.find(e -> e.type.getName().equals(name));
             }
+            updatePacketIDs();
 
             BitSet set = new BitSet(packets.length);
             for(int i = 0; i < packets.length; i++) {
@@ -192,8 +192,19 @@ public class PacketManager {
             ackPacket.availablePackets = set;
             Vars.net.send(ackPacket, Net.SendMode.tcp);
 
-        }catch(IOException ignored) {
+        }catch(IOException exception) {
             // Shouldn't happen
+            Log.err("Failed to sync packets", exception);
+        }
+    }
+
+    private static void updatePacketIDs() {
+        packetIDs.clear();
+        for(int i = 0; i < packets.length; i++) {
+            ClassEntry<?> entry = packets[i];
+            if(entry != null) {
+                packetIDs.put(entry.type, i);
+            }
         }
     }
 

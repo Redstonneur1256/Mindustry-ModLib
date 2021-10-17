@@ -38,17 +38,17 @@ if (devPath != null) {
                 into "$gamePath/mods"
             }
             copy {
-                from "$buildDir/libs/Example.jar"
+                from "$buildDir/libs/${shadowJar.archiveFileName.get()}"
                 into "$gamePath/mods"
             }
 
             // Copy mods to dev server
             copy {
-                from "${rootProject.buildDir}/libs/${shadowJar.archiveFileName.get()}"
+                from "${rootProject.buildDir}/libs/${rootProject.shadowJar.archiveFileName.get()}"
                 into "$devPath/mindustry/config/mods"
             }
             copy {
-                from "$buildDir/libs/Example.jar"
+                from "$buildDir/libs/${shadowJar.archiveFileName.get()}"
                 into "$devPath/mindustry/config/mods"
             }
 
