@@ -1,0 +1,62 @@
+plugins {
+    id 'com.github.johnrengelman.shadow'
+}
+
+dependencies {
+    compileOnly(rootProject)
+    compileOnly('com.github.Anuken:Mindustry:v126')
+}
+sourceSets.main.resources.srcDirs = ['res/']
+
+// Folder with a Mindustry.jar executable and game server (mindustry/)
+String devPath = System.getenv('DEV_SERVERS')
+if (devPath != null) {
+    String gamePath
+    if (System.getProperty('os.name').toLowerCase().contains('windows')) {
+        gamePath = System.getenv('AppData') + '/Mindustry/'
+    } else {
+        gamePath = System.getenv('XDG_DATA_HOME')
+        if (gamePath != null) {
+            if (!gamePath.endsWith('/')) {
+                gamePath += '/'
+            }
+            gamePath += 'Mindustry/'
+        } else {
+            gamePath = "${System.getProperty('user.home')}/.local/share/Mindustry/"
+        }
+    }
+
+    task buildAndRun {
+        dependsOn(tasks.shadowJar)
+        dependsOn(rootProject.tasks.shadowJar)
+        doLast {
+            Thread.sleep(1000)
+
+            // Copy mods to game
+            copy {
+                from "${rootProject.buildDir}/libs/${rootProject.shadowJar.archiveFileName.get()}"
+                into "$gamePath/mods"
+            }
+            copy {
+                from "$buildDir/libs/Example.jar"
+                into "$gamePath/mods"
+            }
+
+            // Copy mods to dev server
+            copy {
+                from "${rootProject.buildDir}/libs/${shadowJar.archiveFileName.get()}"
+                into "$devPath/mindustry/config/mods"
+            }
+            copy {
+                from "$buildDir/libs/Example.jar"
+                into "$devPath/mindustry/config/mods"
+            }
+
+            // Run the game
+            ProcessBuilder builder = new ProcessBuilder()
+            builder.command('java', '-jar', 'Mindustry.jar')
+            builder.directory(new File(devPath as String))
+            builder.start().waitForProcessOutput(System.out, System.err)
+        }
+    }
+}

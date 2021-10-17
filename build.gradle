@@ -1,0 +1,86 @@
+plugins {
+    id 'com.github.johnrengelman.shadow' version '5.2.0'
+}
+
+group 'fr.redstonneur1256'
+version '1.0'
+
+ext {
+    androidSDK = System.getenv('ANDROID_HOME') ?: System.getenv('ANDROID_SDK_ROOT')
+}
+
+if(androidSDK == null) {
+    throw new IllegalStateException('Android SDK is requiered in order to build this project')
+}
+
+allprojects {
+    apply plugin: 'java-library'
+
+    repositories {
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+
+    java {
+        withJavadocJar()
+        withSourcesJar()
+    }
+
+    artifacts {
+        archives(sourcesJar)
+        archives(javadocJar)
+    }
+
+    sourceSets {
+        main.java.srcDirs = ['src/']
+        main.resources.srcDirs = ['res/']
+        test.java.srcDirs = []
+        test.resources.srcDirs = []
+    }
+
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    shadowJar.archiveName(project.name + '.jar')
+}
+
+dependencies {
+    compileOnly('org.jetbrains:annotations:22.0.0')
+    compileOnly('com.github.Anuken:Mindustry:v126')
+    compileOnly files("$androidSDK/platforms/android-31/android.jar")
+}
+
+task buildAndDex(type: Jar) {
+    dependsOn(tasks.shadowJar)
+    archiveName(project.name + '-dexed.jar')
+
+    File dexFile = new File(tasks.buildAndDex.temporaryDir, 'dex.jar')
+    File jarFile = tasks.shadowJar.archiveFile.get().asFile
+
+    doFirst {
+        exec {
+            workingDir(tasks.buildAndDex.temporaryDir)
+
+            File d8path = new File(new File(androidSDK, 'build-tools').listFiles().last(), 'd8.bat')
+
+            File platforms = new File(androidSDK, 'platforms')
+            File androidJar = platforms.listFiles().reverse().find { it.isDirectory() && new File(it, 'android.jar').exists() }
+            List<File> files = configurations.compileClasspath.asList() + configurations.runtimeClasspath.asList() + [androidJar]
+
+            List<String> command = [
+                d8path,
+                '--min-api', '14',
+                *files.collect { ['--classpath', it.path] }.flatten(),
+                // '--no-desugaring',
+                '--output', dexFile, jarFile
+            ]
+
+            commandLine('cmd', '/C', *command)
+        }
+    }
+
+    from(zipTree(jarFile), zipTree(dexFile))
+}

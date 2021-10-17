@@ -1,0 +1,10 @@
+{
+  "name": "testing",
+  "version": "1.0",
+  "minGameVersion": "126",
+  "hidden": true,
+  "dependencies": ["!mod-library"],
+
+  "__comment__": "Replace the main class with the example you want to run",
+  "main": "fr.redstonneur1256.examplemod.packet.CustomPacketExample"
+}
