@@ -1,15 +1,16 @@
 package fr.redstonneur1256.modlib.patch;
 
-import android.content.Context;
 import arc.Core;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import arc.util.Reflect;
-import dalvik.system.DexClassLoader;
 import fr.redstonneur1256.modlib.ModLib;
 import mindustry.Vars;
 import mindustry.mod.Mod;
 import mindustry.mod.Mods;
+
+import java.io.File;
+import java.lang.reflect.Constructor;
 
 public class AndroidModPatch {
 
@@ -25,7 +26,16 @@ public class AndroidModPatch {
 
         Seq<Mods.LoadedMod> mods = Vars.mods.list();
 
-        String filesDir = ((Context) Core.app).getFilesDir().getPath();
+        // String filesDir = ((Context) Core.app).getFilesDir().getPath();
+
+        String filesDir =
+                ((File) Class.forName("android.content.Context")
+                        .getDeclaredMethod("getFilesDir")
+                        .invoke(Core.app))
+                        .getPath();
+
+        Constructor<?> dexClassLoader = Class.forName("dalvik.system.DexClassLoader")
+                .getDeclaredConstructor(String.class, String.class, String.class, ClassLoader.class);
 
         for(int i = 0; i < mods.size; i++) {
             Mods.LoadedMod mod = mods.get(i);
@@ -36,7 +46,8 @@ public class AndroidModPatch {
 
             // Don't use Vars.platform.loadJar() because the method signature changed
 
-            DexClassLoader loader = new DexClassLoader(mod.file.path(), filesDir, null, libLoader);
+            ClassLoader loader = (ClassLoader) dexClassLoader.newInstance(mod.file.path(), filesDir, null, libLoader);
+            // DexClassLoader loader = new DexClassLoader(mod.file.path(), filesDir, null, libLoader);
 
             mod.loader = loader;
 
