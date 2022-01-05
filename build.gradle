@@ -62,21 +62,19 @@ if (androidSDK != null) {
             exec {
                 workingDir(tasks.buildAndDex.temporaryDir)
 
-                File d8path = new File(new File(androidSDK, 'build-tools').listFiles().last(), 'd8.bat')
-
+                File d8path = new File(new File(new File(androidSDK), 'build-tools').listFiles().last(), 'd8.bat')
                 File platforms = new File(androidSDK, 'platforms')
                 File androidJar = platforms.listFiles().reverse().find { it.isDirectory() && new File(it, 'android.jar').exists() }
-                List<File> files = configurations.compileClasspath.asList() + configurations.runtimeClasspath.asList() + [androidJar]
+                List<File> files = configurations.compileClasspath.asList() + configurations.runtimeClasspath.asList() + [new File(androidJar, 'android.jar')]
 
                 List<String> command = [
                     d8path,
+                    *files.collect { "--classpath $it.path" },
                     '--min-api', '14',
-                    *files.collect { ['--classpath', it.path] }.flatten(),
-                    // '--no-desugaring',
                     '--output', dexFile, jarFile
                 ]
 
-                commandLine('cmd', '/C', *command)
+                commandLine('cmd', '/C', command.join(' '))
             }
         }
 
