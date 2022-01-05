@@ -1,4 +1,4 @@
-package fr.redstonneur1256.examplemod.packet;
+package fr.redstonneur1256.examplemod.packet.direct;
 
 import mindustry.io.TypeIO;
 import mindustry.net.Packet;

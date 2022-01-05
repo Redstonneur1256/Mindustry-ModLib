@@ -13,6 +13,7 @@ import arc.util.Strings;
 import arc.util.Time;
 import arc.util.pooling.Pools;
 import fr.redstonneur1256.modlib.events.net.NetExceptionEvent;
+import fr.redstonneur1256.modlib.net.IPacket;
 import fr.redstonneur1256.modlib.net.packets.StreamBeginPacket;
 import fr.redstonneur1256.modlib.net.provider.listener.ClientListener;
 import fr.redstonneur1256.modlib.net.provider.listener.ServerListener;
@@ -24,11 +25,14 @@ import mindustry.net.Packets.StreamChunk;
 import net.jpountz.lz4.LZ4Compressor;
 import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4FastDecompressor;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
 import java.nio.channels.ClosedChannelException;
+import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("unchecked")
 public class MNet extends Net {
@@ -43,11 +47,14 @@ public class MNet extends Net {
     private final ObjectMap<Class<?>, Seq<Cons2<NetConnection, Object>>> serverListeners = new ObjectMap<>();
     private final IntMap<StreamBuilder> streams = new IntMap<>();
 
-    private final Net.NetProvider provider;
+    private final MProvider provider;
     private final LZ4FastDecompressor decompressor = LZ4Factory.fastestInstance().fastDecompressor();
     private final LZ4Compressor compressor = LZ4Factory.fastestInstance().fastCompressor();
 
-    public MNet(Net.NetProvider provider) {
+    private IntMap<WaitingListener<?>> listeners = new IntMap<>();
+    private int nonce = 1;
+
+    public MNet(MProvider provider) {
         super(null);
         this.provider = provider;
     }
@@ -221,7 +228,7 @@ public class MNet extends Net {
      */
     @Override
     public Iterable<NetConnection> getConnections() {
-        return (Iterable<NetConnection>) provider.getConnections();
+        return (Iterable<NetConnection>) ((NetProvider) provider).getConnections();
     }
 
     /**
@@ -236,6 +243,75 @@ public class MNet extends Net {
         }else {
             provider.sendClient(object, mode);
         }
+    }
+
+    /**
+     * Send a reply to the server, client-side only.
+     */
+    public void sendReply(@NotNull IPacket original, @NotNull IPacket reply) {
+        sendPacket(reply, original, null, null, null, 0);
+    }
+
+    /**
+     * Send a reply to the server, client-side only.
+     */
+    public <R extends IPacket> void sendReply(@NotNull IPacket original, @NotNull IPacket reply,
+                                              @NotNull Class<R> expectedReply, @NotNull Cons<R> callback) {
+        sendPacket(reply, original, expectedReply, callback, null, 0);
+    }
+
+    /**
+     * Send a reply to the server, client-side only.
+     */
+    public <R extends IPacket> void sendReply(@NotNull IPacket original, @NotNull IPacket reply,
+                                              @NotNull Class<R> expectedReply, @NotNull Cons<R> callback,
+                                              @Nullable Runnable timeout, long timeoutDuration) {
+        sendPacket(reply, original, expectedReply, callback, timeout, timeoutDuration);
+
+    }
+
+    /**
+     * Send a reply to the server, client-side only.
+     */
+    public <R extends IPacket> void sendPacket(@NotNull IPacket packet,
+                                               @NotNull Class<R> expectedReply, @NotNull Cons<R> callback) {
+        sendPacket(packet, null, expectedReply, callback, null, 0);
+    }
+
+    /**
+     * Send a reply to the server, client-side only.
+     */
+    public <R extends IPacket> void sendPacket(@NotNull IPacket packet,
+                                               @NotNull Class<R> expectedReply, @NotNull Cons<R> callback,
+                                               @Nullable Runnable timeout, long timeoutDuration) {
+        sendPacket(packet, null, expectedReply, callback, timeout, timeoutDuration);
+    }
+
+
+    private <R extends IPacket> void sendPacket(@NotNull IPacket packet, @Nullable IPacket original,
+                                                @Nullable Class<R> expectedReply, @Nullable Cons<R> callback,
+                                                @Nullable Runnable timeout, long timeoutDuration) {
+        if(nonce >= Short.MAX_VALUE) {
+            nonce = 1;
+        }
+        short nonce = (short) this.nonce++;
+        packet.nonce = nonce;
+        packet.parent = original == null ? 0 : original.nonce;
+
+        if(expectedReply != null) {
+            WaitingListener<R> listener = new WaitingListener<>(expectedReply, callback);
+            listeners.put(nonce, listener);
+            if(timeoutDuration > 0) {
+                listener.timeoutTask = provider.executor.schedule(() -> {
+                    listeners.remove(nonce);
+                    if(timeout != null) {
+                        Core.app.post(timeout);
+                    }
+                }, timeoutDuration, TimeUnit.MILLISECONDS);
+            }
+        }
+
+        send(packet, Net.SendMode.tcp);
     }
 
     /**
@@ -299,6 +375,20 @@ public class MNet extends Net {
         }
         Packet packet = (Packet) object;
 
+        if(packet instanceof IPacket) {
+            WaitingListener<?> listener = listeners.remove(((IPacket) packet).parent);
+            if(listener != null) {
+                if(listener.getType().isAssignableFrom(object.getClass())) {
+                    ((Cons<Object>) listener.getCallback()).get(object);
+                }else {
+                    listener.getCallback().get(null);
+                }
+                if(listener.timeoutTask != null) {
+                    listener.timeoutTask.cancel(false);
+                }
+            }
+        }
+
         if(object instanceof StreamBeginPacket) {
             StreamBeginPacket begin = (StreamBeginPacket) object;
             streams.put(begin.id, currentStream = new StreamBuilder(begin));
@@ -316,7 +406,10 @@ public class MNet extends Net {
             }
         }else if(clientListeners.get(object.getClass()) != null) {
             if(clientLoaded || packet.isImportant()) {
-                clientListeners.get(object.getClass()).forEach(o -> ((Cons<Object>) o).get(object));
+                for(Cons<?> cons : clientListeners.get(object.getClass())) {
+                    ((Cons<Object>) cons).get(object);
+                }
+                // clientListeners.get(object.getClass()).forEach(o -> ((Cons<Object>) o).get(object)); FIXME: Android weird behaviour
                 Pools.free(object);
             }else if(!packet.isUnimportant()) {
                 packetQueue.add(object);
@@ -333,6 +426,20 @@ public class MNet extends Net {
      */
     @Override
     public void handleServerReceived(NetConnection connection, Object object) {
+        if(object instanceof IPacket && connection instanceof MArcConnection) {
+            WaitingListener<?> listener = ((MArcConnection) connection).listeners.remove(((IPacket) object).parent);
+            if(listener != null) {
+                if(listener.getType().isAssignableFrom(object.getClass())) {
+                    Core.app.post(() -> ((Cons<Object>) listener.getCallback()).get(object));
+                }else {
+                    Core.app.post(() -> listener.getCallback().get(null));
+                }
+                if(listener.timeoutTask != null) {
+                    listener.timeoutTask.cancel(false);
+                }
+            }
+        }
+
         Seq<Cons2<NetConnection, Object>> listeners = serverListeners.get(object.getClass());
         if(listeners != null) {
             listeners.forEach(cons -> cons.get(connection, object));

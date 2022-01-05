@@ -4,7 +4,5 @@
   "minGameVersion": "126",
   "hidden": true,
   "dependencies": ["!mod-library"],
-
-  "__comment__": "Replace the main class with the example you want to run",
-  "main": "fr.redstonneur1256.examplemod.packet.CustomPacketExample"
+  "main": "fr.redstonneur1256.examplemod.MainMod"
 }

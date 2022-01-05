@@ -11,7 +11,8 @@ import arc.util.Log;
 import arc.util.Time;
 import arc.util.async.Threads;
 import arc.util.pooling.Pools;
-import fr.redstonneur1256.modlib.events.net.ServerConnectEvent;
+import fr.redstonneur1256.modlib.events.net.client.ServerConnectEvent;
+import fr.redstonneur1256.modlib.events.net.server.ServerListPingEvent;
 import fr.redstonneur1256.modlib.net.PacketManager;
 import fr.redstonneur1256.modlib.net.ServerPinger;
 import fr.redstonneur1256.modlib.net.serializer.PacketSerializer;
@@ -30,6 +31,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ClosedSelectorException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class MProvider implements Net.NetProvider {
 
@@ -37,6 +40,7 @@ public class MProvider implements Net.NetProvider {
     private Server server;
     private ServerPinger pinger;
     protected List<MArcConnection> connections;
+    protected ScheduledExecutorService executor;
 
     public MProvider() {
         this.client = new Client(8192, 8192, new PacketSerializer());
@@ -44,6 +48,7 @@ public class MProvider implements Net.NetProvider {
         this.server = new Server(32768, 8192, new PacketSerializer());
         this.pinger = new ServerPinger();
         this.connections = new CopyOnWriteArrayList<>();
+        this.executor = Executors.newSingleThreadScheduledExecutor();
 
         client.addListener(new MClientListener());
         client.setDiscoveryPacket(packetSupplier);
@@ -51,9 +56,20 @@ public class MProvider implements Net.NetProvider {
         server.addListener(new MServerListener(this));
         server.setMulticast(Vars.multicastGroup, Vars.multicastPort);
         server.setDiscoveryHandler((address, handler) -> {
-            ByteBuffer buffer = NetworkIO.writeServerData();
-            buffer.position(0);
-            handler.respond(buffer);
+
+            ServerListPingEvent event = Pools.obtain(ServerListPingEvent.class, ServerListPingEvent::new);
+            event.address = address;
+            event.offline = false;
+            event.setDefaults();
+            Events.fire(event);
+
+            if(!event.offline) {
+                ByteBuffer buffer = event.writeServerData();
+                buffer.position(0);
+                handler.respond(buffer);
+            }
+
+            Pools.free(event);
         });
     }
 

@@ -1,4 +1,4 @@
-package fr.redstonneur1256.modlib.events.net;
+package fr.redstonneur1256.modlib.events.net.client;
 
 public class ServerConnectEvent {
 

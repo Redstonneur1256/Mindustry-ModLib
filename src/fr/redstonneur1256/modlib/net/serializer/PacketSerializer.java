@@ -86,6 +86,21 @@ public class PacketSerializer implements NetSerializer {
         ((Packet) object).write(buffer);
     }
 
+    @Override
+    public int getLengthLength() {
+        return 2;
+    }
+
+    @Override
+    public void writeLength(ByteBuffer buffer, int length) {
+        buffer.putShort((short) length);
+    }
+
+    @Override
+    public int readLength(ByteBuffer buffer) {
+        return buffer.getShort();
+    }
+
     public void writeFramework(ByteBuffer buffer, FrameworkMessage message) {
         if(message instanceof FrameworkMessage.Ping) {
             FrameworkMessage.Ping ping = (FrameworkMessage.Ping) message;

@@ -12,50 +12,62 @@ import mindustry.mod.Mods;
 import java.io.File;
 import java.lang.reflect.Constructor;
 
-public class AndroidModPatch {
+public class AndroidModPatch implements PlatformLoader {
 
-    /**
-     * Reload mods with classloaders with this mod classloader as parent
-     * FIXME: Android crashes with NoClassDefFoundError
-     */
-    public static void applyPatch() throws Exception {
-        Mods.LoadedMod modLibrary = Vars.mods.getMod(ModLib.class);
-        ClassLoader libLoader = modLibrary.loader;
-
-        ObjectMap<Class<?>, Mods.ModMeta> metas = Reflect.get(Mods.class, Vars.mods, "metas");
-
-        Seq<Mods.LoadedMod> mods = Vars.mods.list();
-
-        // String filesDir = ((Context) Core.app).getFilesDir().getPath();
-
-        String filesDir =
-                ((File) Class.forName("android.content.Context")
-                        .getDeclaredMethod("getFilesDir")
-                        .invoke(Core.app))
-                        .getPath();
+    @Override
+    public ObjectMap<Mods.ModMeta, MultiClassLoader> createApplyModPatch() throws Exception {
+        String filesDir = ((File) Class.forName("android.content.Context")
+                .getDeclaredMethod("getFilesDir")
+                .invoke(Core.app))
+                .getPath();
 
         Constructor<?> dexClassLoader = Class.forName("dalvik.system.DexClassLoader")
                 .getDeclaredConstructor(String.class, String.class, String.class, ClassLoader.class);
 
+
+        Mods.LoadedMod modLib = Vars.mods.getMod(ModLib.class);
+        ClassLoader loader = modLib.loader;
+
+        ObjectMap<Class<?>, Mods.ModMeta> metas = Reflect.get(Mods.class, Vars.mods, "metas");
+        Seq<Mods.LoadedMod> mods = Vars.mods.list();
+
+        ObjectMap<Mods.ModMeta, MultiClassLoader> loaders = new ObjectMap<>();
+
         for(int i = 0; i < mods.size; i++) {
             Mods.LoadedMod mod = mods.get(i);
-            if(mod.loader == null || mod.state != Mods.ModState.enabled || mod == modLibrary) {
+            if(mod.loader == null || mod.state != Mods.ModState.enabled || mod == modLib) {
                 continue;
             }
+
             metas.remove(mod.main.getClass());
 
-            // Don't use Vars.platform.loadJar() because the method signature changed
+            // Create a new classloader
+            MultiClassLoader multiLoader = new MultiClassLoader(loader);
 
-            ClassLoader loader = (ClassLoader) dexClassLoader.newInstance(mod.file.path(), filesDir, null, libLoader);
-            // DexClassLoader loader = new DexClassLoader(mod.file.path(), filesDir, null, libLoader);
+            ClassLoader newModLoader = (ClassLoader) dexClassLoader.newInstance(mod.file.file().getPath(), filesDir, null, multiLoader);
+            loaders.put(mod.meta, multiLoader);
 
-            mod.loader = loader;
+            // Do not load main class here because resolving it may cause it to try to load classes from other mods
+            // before they are added to the multi classloader and available to use
+            mod.loader = newModLoader;
+        }
 
-            Mod main = (Mod) loader.loadClass(mod.meta.main).newInstance();
-            mods.set(i, new Mods.LoadedMod(mod.file, mod.root, main, loader, mod.meta));
+        for(ObjectMap.Entry<Mods.ModMeta, MultiClassLoader> entry : loaders) {
+            // If the mod is not the one from this MultiClassLoader add his classloader to the MultiClassLoader
+            mods.each(mod -> mod.meta != entry.key, mod -> entry.value.addClassLoader(mod.loader));
+        }
 
+        for(int i = 0; i < mods.size; i++) {
+            Mods.LoadedMod mod = mods.get(i);
+            if(mod.loader == null || mod.state != Mods.ModState.enabled || mod == modLib) {
+                continue;
+            }
+            Mod main = (Mod) mod.loader.loadClass(mod.meta.main).newInstance();
+            mods.set(i, new Mods.LoadedMod(mod.file, mod.root, main, mod.loader, mod.meta)); // Update the main class instance
             metas.put(main.getClass(), mod.meta);
         }
+
+        return loaders;
     }
 
 }

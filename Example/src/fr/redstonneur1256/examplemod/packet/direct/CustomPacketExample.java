@@ -1,4 +1,4 @@
-package fr.redstonneur1256.examplemod.packet;
+package fr.redstonneur1256.examplemod.packet.direct;
 
 import arc.Core;
 import arc.Events;
@@ -8,14 +8,11 @@ import fr.redstonneur1256.modlib.events.net.PlayerPacketsSyncedEvent;
 import fr.redstonneur1256.modlib.net.PacketManager;
 import mindustry.Vars;
 import mindustry.game.EventType;
-import mindustry.mod.Mod;
 import mindustry.net.Net;
 
+public class CustomPacketExample {
 
-public class CustomPacketExample extends Mod {
-
-    @Override
-    public void init() {
+    public static void init() {
         // Register a custom packet, for this example a simple packet containing a String
         PacketManager.registerPacket(MessagePacket.class, MessagePacket::new);
 
