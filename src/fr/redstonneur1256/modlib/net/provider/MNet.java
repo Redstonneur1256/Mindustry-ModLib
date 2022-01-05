@@ -406,10 +406,7 @@ public class MNet extends Net {
             }
         }else if(clientListeners.get(object.getClass()) != null) {
             if(clientLoaded || packet.isImportant()) {
-                for(Cons<?> cons : clientListeners.get(object.getClass())) {
-                    ((Cons<Object>) cons).get(object);
-                }
-                // clientListeners.get(object.getClass()).forEach(o -> ((Cons<Object>) o).get(object)); FIXME: Android weird behaviour
+                clientListeners.get(object.getClass()).each(o -> ((Cons<Object>) o).get(object));
                 Pools.free(object);
             }else if(!packet.isUnimportant()) {
                 packetQueue.add(object);
@@ -442,7 +439,7 @@ public class MNet extends Net {
 
         Seq<Cons2<NetConnection, Object>> listeners = serverListeners.get(object.getClass());
         if(listeners != null) {
-            listeners.forEach(cons -> cons.get(connection, object));
+            listeners.each(cons -> cons.get(connection, object));
             Pools.free(object);
         }else {
             Log.err("Unhandled packet type: '@'!", object.getClass());

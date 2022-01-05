@@ -3,9 +3,6 @@ Library to help developers creating Mindustry mods and optimize some game featur
 
 If you are a mod a developer and there is a utility you would like to see just to open an issue
 
-⚠️Only tested with Mindustry V126  
-⚠️Doesn't work on mobile
-
 Current utilities:
 -----
 
