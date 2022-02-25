@@ -133,7 +133,13 @@ public class MTypeIO {
             NetworkUtil.writeExtendedByte(writes::b, 0);
             return;
         }
-        int id = typeToID.get(value.getClass(), -1);
+        int id;
+        Class<?> type = value.getClass();
+        do {
+            id = typeToID.get(type, -1);
+            type = type.getSuperclass();
+        } while(id == -1 && type != null);
+
         if(id == -1) {
             throw new IllegalArgumentException("Unable to serialize object " + value + " (" + value.getClass().getName() + ")");
         }
