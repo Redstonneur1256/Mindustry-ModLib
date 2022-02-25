@@ -1,6 +1,5 @@
 package fr.redstonneur1256.examplemod;
 
-import fr.redstonneur1256.examplemod.packet.direct.CustomPacketExample;
 import mindustry.mod.Mod;
 
 public class MainMod extends Mod {
@@ -10,9 +9,13 @@ public class MainMod extends Mod {
         // Uncomment the demo you want to test
 
         // Send custom packets to the server/client
-        CustomPacketExample.init();
+        // CustomPacketExample.init();
 
         // Send custom packet and wait for reply, client/server example
         // CustomReplyPacketExample.init();
+
+        // Test if a String is foo using a custom Call implementation
+        CustomCallExample.init();
     }
+
 }

@@ -4,7 +4,7 @@ import arc.Core;
 import arc.Events;
 import arc.input.KeyCode;
 import arc.util.Log;
-import fr.redstonneur1256.modlib.events.net.PlayerPacketsSyncedEvent;
+import fr.redstonneur1256.modlib.events.net.PlayerDataSyncedEvent;
 import fr.redstonneur1256.modlib.net.PacketManager;
 import mindustry.Vars;
 import mindustry.game.EventType;
@@ -41,7 +41,7 @@ public class CustomPacketExample {
 
 
         // When a player successfully synced his packets:
-        Events.on(PlayerPacketsSyncedEvent.class, event -> {
+        Events.on(PlayerDataSyncedEvent.class, event -> {
 
             // This is called on the client side with null player
             if(event.player == null) {
