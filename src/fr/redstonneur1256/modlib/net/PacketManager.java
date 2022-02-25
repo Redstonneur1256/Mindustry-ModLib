@@ -12,18 +12,20 @@ import arc.util.Reflect;
 import arc.util.Structs;
 import arc.util.io.ReusableByteOutStream;
 import fr.redstonneur1256.modlib.MVars;
-import fr.redstonneur1256.modlib.events.net.PlayerPacketsSyncedEvent;
-import fr.redstonneur1256.modlib.net.packets.PacketsAckPacket;
-import fr.redstonneur1256.modlib.net.packets.PacketsSyncPacket;
-import fr.redstonneur1256.modlib.net.packets.StreamBeginPacket;
+import fr.redstonneur1256.modlib.events.net.PlayerDataSyncedEvent;
+import fr.redstonneur1256.modlib.net.call.CallManager;
+import fr.redstonneur1256.modlib.net.call.MethodInfo;
+import fr.redstonneur1256.modlib.net.packets.*;
 import fr.redstonneur1256.modlib.net.provider.MArcConnection;
 import fr.redstonneur1256.modlib.net.provider.MNet;
 import fr.redstonneur1256.modlib.net.provider.MProvider;
 import fr.redstonneur1256.modlib.net.serializer.ClassEntry;
+import fr.redstonneur1256.modlib.net.serializer.MTypeIO;
 import mindustry.ClientLauncher;
 import mindustry.Vars;
 import mindustry.core.NetClient;
 import mindustry.core.NetServer;
+import mindustry.game.EventType;
 import mindustry.net.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,6 +34,7 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.BitSet;
 
@@ -58,10 +61,17 @@ public class PacketManager {
         packets[3] = new ClassEntry<>(Packets.ConnectPacket.class, Packets.ConnectPacket::new);
         packets[4] = new ClassEntry<>(Packets.InvokePacket.class, Packets.InvokePacket::new);
         if(classes.length > 5) { // Foo client network packet if available
-            packets[5] = new ClassEntry<>((Class<Packet>) classes[5].type, (Prov<Packet>) classes[5].constructor);
+            if(Vars.headless) { // Wait for it to register
+                Events.run(EventType.ServerLoadEvent.class, () -> packets[5] = new ClassEntry<>((Class<Packet>) classes[5].type, (Prov<Packet>) classes[5].constructor));
+            } else {
+                packets[5] = new ClassEntry<>((Class<Packet>) classes[5].type, (Prov<Packet>) classes[5].constructor);
+            }
+
         }
-        packets[6] = new ClassEntry<>(PacketsSyncPacket.class, PacketsSyncPacket::new);
-        packets[7] = new ClassEntry<>(PacketsAckPacket.class, PacketsAckPacket::new);
+        packets[6] = new ClassEntry<>(DataSyncPacket.class, DataSyncPacket::new);
+        packets[7] = new ClassEntry<>(DataAckPacket.class, DataAckPacket::new);
+        registerPacket(CustomInvokePacket.class, CustomInvokePacket::new);
+        registerPacket(CustomInvokeResultPacket.class, CustomInvokeResultPacket::new);
     }
 
     public static void initialize() {
@@ -73,23 +83,26 @@ public class PacketManager {
         Vars.net.dispose();
         Vars.net = MVars.net = new MNet(new MProvider());
 
-        Vars.net.handleClient(PacketsSyncPacket.class, PacketManager::onSyncPacket);
+        Vars.net.handleClient(DataSyncPacket.class, PacketManager::onSyncPacket);
 
         Vars.net.handleServer(Packets.ConnectPacket.class, PacketManager::onServerConnect);
         Vars.net.handleServer(StreamBeginPacket.class, PacketManager::onServerStreamBegin);
         Vars.net.handleServer(Packets.StreamChunk.class, PacketManager::onServerStreamChunk);
-        Vars.net.handleServer(PacketsAckPacket.class, PacketManager::onServerSync);
+        Vars.net.handleServer(DataAckPacket.class, PacketManager::onServerSync);
+
+        Vars.net.handleClient(CustomInvokePacket.class, MVars.net.getCallManager()::callMethod);
+        Vars.net.handleServer(CustomInvokePacket.class, MVars.net.getCallManager()::callMethod);
 
         // Recreate NetServer & NetClient after, so they register their packet listener on the new net instance
         Vars.netServer = new NetServer();
-        Vars.netClient = Vars.headless ? null : new NetClient();
+        Vars.netClient = Vars.netClient == null ? null : new NetClient();
 
         Object application = Core.app.getListeners().find(listener -> listener instanceof ClientLauncher);
         if(application != null) {
             ApplicationListener[] listeners = Reflect.get(ApplicationCore.class, application, "modules");
             listeners[Structs.indexOf(listeners, listener -> listener instanceof NetServer)] = Vars.netServer;
             listeners[Structs.indexOf(listeners, listener -> listener instanceof NetClient)] = Vars.netClient;
-        }else {
+        } else {
             Seq<ApplicationListener> listeners = Core.app.getListeners();
             listeners.set(listeners.indexOf(listener -> listener instanceof NetServer), Vars.netServer);
         }
@@ -136,6 +149,7 @@ public class PacketManager {
     }
 
     public static void onServerHost() {
+        // Update packets:
         int packetCount = constantPackets + registeredPackets.size;
         packets = Arrays.copyOf(packets, packetCount);
 
@@ -146,6 +160,12 @@ public class PacketManager {
             packets[constantPackets + i] = registeredPackets.get(i);
         }
         updatePacketIDs();
+
+        // Update registered methods IDs:
+        MVars.net.getCallManager().updateMethodIDs();
+
+        // Update TypeIO seralizers IDs
+        MTypeIO.updateSerializerIDs();
     }
 
     private static void onServerConnect(NetConnection connection, Packets.ConnectPacket packet) {
@@ -157,45 +177,103 @@ public class PacketManager {
 
         ReusableByteOutStream output = new ReusableByteOutStream();
         try(DataOutputStream stream = new DataOutputStream(output)) {
+
+            // Sync the packets:
             stream.writeInt(packets.length);
             for(int i = constantPackets; i < packets.length; i++) {
                 ClassEntry<?> entry = packets[i];
                 stream.writeUTF(entry == null ? "null" : entry.type.getName());
             }
-        }catch(IOException ignored) {
+
+            // Sync call methods:
+            CallManager call = MVars.net.getCallManager();
+            writeMethods(call.getMethodIDs(), stream);
+
+            // Sync TypeIO IDs:
+            MTypeIO.writeSerializerIDs(stream);
+        } catch(IOException ignored) {
         }
 
-        PacketsSyncPacket sync = new PacketsSyncPacket();
+        DataSyncPacket sync = new DataSyncPacket();
         sync.stream = new ByteArrayInputStream(output.getBytes(), 0, output.size());
         connection.sendStream(sync);
     }
 
-    private static void onSyncPacket(PacketsSyncPacket packet) {
+    private static void writeMethods(ObjectIntMap<Method> methods, DataOutputStream stream) throws IOException {
+        stream.writeInt(methods.size);
+        for(ObjectIntMap.Entry<Method> entry : methods) {
+            int id = entry.value;
+            Method method = entry.key;
+
+            Class<?>[] arguments = method.getParameterTypes();
+
+            stream.writeInt(id);
+            stream.writeUTF(method.getName());
+            stream.writeInt(arguments.length);
+            for(Class<?> argument : arguments) {
+                stream.writeUTF(argument.getName());
+            }
+        }
+    }
+
+    private static void onSyncPacket(DataSyncPacket packet) {
         try(DataInputStream stream = new DataInputStream(packet.stream)) {
+
+            // Read custom packets:
             int packetCount = stream.readInt();
             packets = Arrays.copyOf(packets, packetCount);
-
             for(int i = constantPackets; i < packetCount; i++) {
                 String name = stream.readUTF();
-                packets[i] = registeredPackets.find(e -> e.type.getName().equals(name));
+                packets[i] = registeredPackets.find(entry -> entry.type.getName().equals(name));
             }
-            updatePacketIDs();
 
+            // Read custom methods:
+            MethodInfo[] remoteMethods = readMethods(stream);
+
+            // Read TypeIO serializer types:
+            MTypeIO.readSerializerTypes(stream);
+
+
+            // Sync everything locally:
+            updatePacketIDs();
+            MVars.net.getCallManager().syncMethods(remoteMethods);
+
+            // Send back needed information:
             BitSet set = new BitSet(packets.length);
             for(int i = 0; i < packets.length; i++) {
                 set.set(i, packets[i] != null);
             }
 
-            Events.fire(new PlayerPacketsSyncedEvent(Vars.player));
-
-            PacketsAckPacket ackPacket = new PacketsAckPacket();
+            DataAckPacket ackPacket = new DataAckPacket();
             ackPacket.availablePackets = set;
             Vars.net.send(ackPacket, Net.SendMode.tcp);
 
-        }catch(IOException exception) {
+            Events.fire(new PlayerDataSyncedEvent(Vars.player));
+        } catch(IOException exception) {
             // Shouldn't happen
             Log.err("Failed to sync packets", exception);
         }
+    }
+
+    private static MethodInfo[] readMethods(DataInputStream stream) throws IOException {
+        MethodInfo[] methods = new MethodInfo[stream.readInt()];
+        for(int i = 0; i < methods.length; i++) {
+            int id = stream.readInt();
+            String name = stream.readUTF();
+            Class<?>[] arguments = new Class<?>[stream.readInt()];
+            for(int j = 0; j < arguments.length; j++) {
+                String className = stream.readUTF();
+                try {
+                    arguments[j] = Class.forName(className);
+                } catch(ClassNotFoundException e) {
+                    Log.warn("Remote method uses unknown class @", className);
+                }
+            }
+
+            methods[i] = new MethodInfo(id, name, arguments);
+        }
+
+        return methods;
     }
 
     private static void updatePacketIDs() {
@@ -223,7 +301,7 @@ public class PacketManager {
         ((MArcConnection) connection).onStreamChunk(packet);
     }
 
-    private static void onServerSync(NetConnection connection, PacketsAckPacket packet) {
+    private static void onServerSync(NetConnection connection, DataAckPacket packet) {
         if(!(connection instanceof MArcConnection)) {
             return;
         }

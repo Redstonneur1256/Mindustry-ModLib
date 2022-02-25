@@ -14,6 +14,7 @@ import arc.util.Time;
 import arc.util.pooling.Pools;
 import fr.redstonneur1256.modlib.events.net.NetExceptionEvent;
 import fr.redstonneur1256.modlib.net.IPacket;
+import fr.redstonneur1256.modlib.net.call.CallManager;
 import fr.redstonneur1256.modlib.net.packets.StreamBeginPacket;
 import fr.redstonneur1256.modlib.net.provider.listener.ClientListener;
 import fr.redstonneur1256.modlib.net.provider.listener.ServerListener;
@@ -54,6 +55,8 @@ public class MNet extends Net {
     private IntMap<WaitingListener<?>> listeners = new IntMap<>();
     private int nonce = 1;
 
+    private CallManager callManager = new CallManager();
+
     public MNet(MProvider provider) {
         super(null);
         this.provider = provider;
@@ -65,9 +68,9 @@ public class MNet extends Net {
 
         if(throwable instanceof ArcNetException) {
             Core.app.post(() -> showError(new IOException("mismatch")));
-        }else if(throwable instanceof ClosedChannelException) {
+        } else if(throwable instanceof ClosedChannelException) {
             Core.app.post(() -> showError(new IOException("alreadyconnected")));
-        }else {
+        } else {
             Core.app.post(() -> showError(throwable));
         }
     }
@@ -91,24 +94,24 @@ public class MNet extends Net {
 
             if(throwable instanceof BufferUnderflowException || throwable instanceof BufferOverflowException) {
                 error = Core.bundle.get("error.io");
-            }else if(error.equals("mismatch")) {
+            } else if(error.equals("mismatch")) {
                 error = Core.bundle.get("error.mismatch");
-            }else if(error.contains("port out of range") || error.contains("invalid argument") || (error.contains("invalid") && error.contains("address")) || Strings.neatError(throwable).contains("address associated")) {
+            } else if(error.contains("port out of range") || error.contains("invalid argument") || (error.contains("invalid") && error.contains("address")) || Strings.neatError(throwable).contains("address associated")) {
                 error = Core.bundle.get("error.invalidaddress");
-            }else if(error.contains("connection refused") || error.contains("route to host") || type.contains("unknownhost")) {
+            } else if(error.contains("connection refused") || error.contains("route to host") || type.contains("unknownhost")) {
                 error = Core.bundle.get("error.unreachable");
-            }else if(type.contains("timeout")) {
+            } else if(type.contains("timeout")) {
                 error = Core.bundle.get("error.timedout");
-            }else if(error.equals("alreadyconnected") || error.contains("connection is closed")) {
+            } else if(error.equals("alreadyconnected") || error.contains("connection is closed")) {
                 error = Core.bundle.get("error.alreadyconnected");
-            }else if(!error.isEmpty()) {
+            } else if(!error.isEmpty()) {
                 error = Core.bundle.get("error.any");
                 isError = true;
             }
 
             if(isError) {
                 Vars.ui.showException("@error.any", throwable);
-            }else {
+            } else {
                 Vars.ui.showText("", Core.bundle.format("connectfail", error));
             }
             Vars.ui.loadfrag.hide();
@@ -154,10 +157,10 @@ public class MNet extends Net {
                 provider.connectClient(ip, port, success);
                 active = true;
                 server = false;
-            }else {
+            } else {
                 throw new IOException("alreadyconnected");
             }
-        }catch(IOException e) {
+        } catch(IOException e) {
             showError(e);
         }
     }
@@ -240,7 +243,7 @@ public class MNet extends Net {
             for(NetConnection con : provider.getConnections()) {
                 con.send(object, mode);
             }
-        }else {
+        } else {
             provider.sendClient(object, mode);
         }
     }
@@ -314,6 +317,22 @@ public class MNet extends Net {
         send(packet, Net.SendMode.tcp);
     }
 
+    public <T> void registerCall(Class<T> type, T implementation) {
+        checkActive("Cannot register new handlers while net is active");
+        if(!type.isInterface()) {
+            throw new IllegalArgumentException(String.format("Class %s is not an interface", type.getName()));
+        }
+        callManager.registerCall(type, implementation);
+    }
+
+    public <T> T getCall(Class<T> type) {
+        return callManager.getCall(type);
+    }
+
+    public CallManager getCallManager() {
+        return callManager;
+    }
+
     /**
      * Send an object to everyone EXCEPT a certain client. Server-side only.
      */
@@ -380,7 +399,7 @@ public class MNet extends Net {
             if(listener != null) {
                 if(listener.getType().isAssignableFrom(object.getClass())) {
                     ((Cons<Object>) listener.getCallback()).get(object);
-                }else {
+                } else {
                     listener.getCallback().get(null);
                 }
                 if(listener.timeoutTask != null) {
@@ -392,7 +411,7 @@ public class MNet extends Net {
         if(object instanceof StreamBeginPacket) {
             StreamBeginPacket begin = (StreamBeginPacket) object;
             streams.put(begin.id, currentStream = new StreamBuilder(begin));
-        }else if(object instanceof StreamChunk) {
+        } else if(object instanceof StreamChunk) {
             StreamChunk chunk = (StreamChunk) object;
             StreamBuilder builder = streams.get(chunk.id);
             if(builder == null) {
@@ -404,18 +423,18 @@ public class MNet extends Net {
                 handleClientReceived(builder.build());
                 currentStream = null;
             }
-        }else if(clientListeners.get(object.getClass()) != null) {
+        } else if(clientListeners.get(object.getClass()) != null) {
             if(clientLoaded || packet.isImportant()) {
                 clientListeners.get(object.getClass()).each(o -> ((Cons<Object>) o).get(object));
                 Pools.free(object);
-            }else if(!packet.isUnimportant()) {
+            } else if(!packet.isUnimportant()) {
                 packetQueue.add(object);
-            }else {
+            } else {
                 Pools.free(object);
             }
-        }else {
-            Log.err("Unhandled packet type: '@'!", object);
-        }
+        }/* else {
+            Log.err("Unhandled packet type: '@'!", object); Don't log unhandled packets as it might be a type only for replies
+        }*/
     }
 
     /**
@@ -428,7 +447,7 @@ public class MNet extends Net {
             if(listener != null) {
                 if(listener.getType().isAssignableFrom(object.getClass())) {
                     Core.app.post(() -> ((Cons<Object>) listener.getCallback()).get(object));
-                }else {
+                } else {
                     Core.app.post(() -> listener.getCallback().get(null));
                 }
                 if(listener.timeoutTask != null) {
@@ -441,9 +460,9 @@ public class MNet extends Net {
         if(listeners != null) {
             listeners.each(cons -> cons.get(connection, object));
             Pools.free(object);
-        }else {
-            Log.err("Unhandled packet type: '@'!", object.getClass());
-        }
+        }/* else {
+            Log.err("Unhandled packet type: '@'!", object.getClass()); Don't log unhandled packets as it might be a type only for replies
+        }*/
     }
 
     /**
@@ -452,6 +471,10 @@ public class MNet extends Net {
     @Override
     public void pingHost(String address, int port, Cons<Host> valid, Cons<Exception> failed) {
         provider.pingHost(address, port, valid, failed);
+    }
+
+    public MProvider getProvider() {
+        return provider;
     }
 
     /**
@@ -483,6 +506,12 @@ public class MNet extends Net {
         provider.dispose();
         server = false;
         active = false;
+    }
+
+    public void checkActive(String message) {
+        if(active()) {
+            throw new IllegalStateException(message);
+        }
     }
 
 }

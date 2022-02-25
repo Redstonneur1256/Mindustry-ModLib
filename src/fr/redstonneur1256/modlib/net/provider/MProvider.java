@@ -48,7 +48,11 @@ public class MProvider implements Net.NetProvider {
         this.server = new Server(32768, 8192, new PacketSerializer());
         this.pinger = new ServerPinger();
         this.connections = new CopyOnWriteArrayList<>();
-        this.executor = Executors.newSingleThreadScheduledExecutor();
+        this.executor = Executors.newSingleThreadScheduledExecutor(runnable -> {
+            Thread thread = new Thread(runnable, " MNet-Scheduler");
+            thread.setDaemon(true);
+            return thread;
+        });
 
         client.addListener(new MClientListener());
         client.setDiscoveryPacket(packetSupplier);
@@ -83,7 +87,7 @@ public class MProvider implements Net.NetProvider {
                 Threads.daemon("Net Client", () -> {
                     try {
                         client.run();
-                    }catch(Exception exception) {
+                    } catch(Exception exception) {
                         if(!(exception instanceof ClosedSelectorException)) {
                             Vars.net.handleException(exception);
                         }
@@ -95,7 +99,7 @@ public class MProvider implements Net.NetProvider {
 
                 client.connect(5000, ip, port, port);
                 success.run();
-            }catch(Exception exception) {
+            } catch(Exception exception) {
                 Vars.net.handleException(exception);
             }
         });
@@ -115,11 +119,11 @@ public class MProvider implements Net.NetProvider {
 
             if(mode == Net.SendMode.tcp) {
                 client.sendTCP(object);
-            }else {
+            } else {
                 client.sendUDP(object);
             }
             //sending things can cause an under/overflow, catch it and disconnect instead of crashing
-        }catch(BufferOverflowException | BufferUnderflowException exception) {
+        } catch(BufferOverflowException | BufferUnderflowException exception) {
             Vars.net.showError(exception);
         }
         Pools.free(object);
@@ -138,7 +142,7 @@ public class MProvider implements Net.NetProvider {
                 Host host = NetworkIO.readServerData((int) Time.timeSinceMillis(time), packet.getAddress().getHostAddress(), buffer);
                 callback.get(host);
                 foundAddresses.add(packet.getAddress());
-            }catch(Exception exception) {
+            } catch(Exception exception) {
                 //don't crash when there's an error pinging a server or parsing data
                 Log.err("Failed to discover server", exception);
             }
@@ -160,7 +164,7 @@ public class MProvider implements Net.NetProvider {
         Threads.daemon("Net Server", () -> {
             try {
                 server.run();
-            }catch(Throwable throwable) {
+            } catch(Throwable throwable) {
                 if(!(throwable instanceof ClosedSelectorException)) {
                     Threads.throwAppException(throwable);
                 }
@@ -185,7 +189,7 @@ public class MProvider implements Net.NetProvider {
         closeServer();
         try {
             client.dispose();
-        }catch(IOException ignored) {
+        } catch(IOException ignored) {
         }
     }
 
@@ -200,12 +204,16 @@ public class MProvider implements Net.NetProvider {
         return null;
     }
 
+    public ScheduledExecutorService getExecutor() {
+        return executor;
+    }
+
     private static boolean isLocal(InetAddress address) {
         if(address.isAnyLocalAddress() || address.isLoopbackAddress()) return true;
 
         try {
             return NetworkInterface.getByInetAddress(address) != null;
-        }catch(Exception e) {
+        } catch(Exception e) {
             return false;
         }
     }

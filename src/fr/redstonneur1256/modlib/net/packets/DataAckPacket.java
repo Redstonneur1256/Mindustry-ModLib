@@ -5,7 +5,7 @@ import mindustry.net.Packet;
 import java.nio.ByteBuffer;
 import java.util.BitSet;
 
-public class PacketsAckPacket implements Packet {
+public class DataAckPacket implements Packet {
 
     public BitSet availablePackets;
 

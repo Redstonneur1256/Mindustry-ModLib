@@ -6,7 +6,10 @@ If you are a mod a developer and there is a utility you would like to see just t
 Current utilities:
 -----
 
-* PacketManager
+* Registrable packets (up to 32767 packets)
+* Packet replies
+* Call like classes supporting return values
+* Advanced TypeIO
 
 Current game optimizations:
 -----

@@ -1,6 +1,6 @@
 package fr.redstonneur1256.modlib.net.packets;
 
-import fr.redstonneur1256.modlib.net.serializer.PacketSerializer;
+import fr.redstonneur1256.modlib.util.NetworkUtil;
 import mindustry.net.Packet;
 
 import java.nio.ByteBuffer;
@@ -17,14 +17,14 @@ public class StreamBeginPacket implements Packet {
     public void write(ByteBuffer buffer) {
         buffer.putInt(id);
         buffer.putInt(total);
-        PacketSerializer.putExtended(buffer, type);
+        NetworkUtil.writeExtendedByte(buffer, type);
     }
 
     @Override
     public void read(ByteBuffer buffer) {
         id = buffer.getInt();
         total = buffer.getInt();
-        type = PacketSerializer.getExtended(buffer, buffer.get());
+        type = (short) NetworkUtil.readExtendedByte(buffer::get);
     }
 
 }

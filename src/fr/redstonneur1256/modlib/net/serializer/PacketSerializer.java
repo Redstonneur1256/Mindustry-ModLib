@@ -4,6 +4,7 @@ import arc.net.FrameworkMessage;
 import arc.net.NetSerializer;
 import arc.util.pooling.Pools;
 import fr.redstonneur1256.modlib.net.PacketManager;
+import fr.redstonneur1256.modlib.util.NetworkUtil;
 import mindustry.net.Packet;
 import mindustry.net.Packets;
 
@@ -11,34 +12,15 @@ import java.nio.ByteBuffer;
 
 public class PacketSerializer implements NetSerializer {
 
-    public static void putExtended(ByteBuffer buffer, short value) {
-        if(value > 127) {
-            byte left = (byte) (((value >> 8) & 0b0111_1111) | 0b1000_0000);
-            byte right = (byte) (value & 0b1111_1111);
-
-            buffer.put(left);
-            buffer.put(right);
-        }else {
-            buffer.put((byte) value);
-        }
-    }
-
-    public static short getExtended(ByteBuffer buffer, short first) {
-        if((first & 0b1000_0000) != 0) {
-            byte right = buffer.get();
-
-            return (short) ((first & 0b01111111) << 8 | right);
-        }
-        return first;
-    }
-
     @Override
     public Object read(ByteBuffer buffer) {
         short id = buffer.get();
         if(id == -2) {
             return readFramework(buffer);
         }
-        id = getExtended(buffer, id);
+        if((id & 0x80) != 0) {
+            id = (short) ((id & 0x7F) << 8 | buffer.get());
+        }
 
         ClassEntry<Packet> entry = PacketManager.getEntry(id);
 
@@ -67,17 +49,14 @@ public class PacketSerializer implements NetSerializer {
         short id = PacketManager.getID(object.getClass());
 
         if(id == -1) {
-            // Make it look as connect confirm which won't have any effect since the player is already connected
-            // this shouldn't be reached, but we never know
+            // Make it look as KeepAlive (safer than connectConfirm)
 
-            buffer.put((byte) PacketManager.getID(Packets.InvokePacket.class));
-            buffer.put((byte) 70); // Type
-            buffer.put((byte) 0); // Priority
-            buffer.putShort((short) 0); // Length
+            buffer.put((byte) -2); // Framework message
+            buffer.put((byte) 2);  // KeepAlive
             return;
         }
 
-        putExtended(buffer, id);
+        NetworkUtil.writeExtendedByte(buffer, id);
 
         if(object instanceof Packets.ConnectPacket) {
             ((Packets.ConnectPacket) object).color &= ~0xFF;

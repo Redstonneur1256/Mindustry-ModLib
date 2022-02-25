@@ -9,10 +9,10 @@ import arc.net.InputStreamSender;
 import arc.struct.Bits;
 import arc.struct.IntMap;
 import arc.util.Log;
-import fr.redstonneur1256.modlib.events.net.PlayerPacketsSyncedEvent;
+import fr.redstonneur1256.modlib.events.net.PlayerDataSyncedEvent;
 import fr.redstonneur1256.modlib.net.IPacket;
 import fr.redstonneur1256.modlib.net.PacketManager;
-import fr.redstonneur1256.modlib.net.packets.PacketsAckPacket;
+import fr.redstonneur1256.modlib.net.packets.DataAckPacket;
 import fr.redstonneur1256.modlib.net.packets.StreamBeginPacket;
 import mindustry.Vars;
 import mindustry.net.Net;
@@ -181,14 +181,14 @@ public class MArcConnection extends NetConnection {
         return supportedPackets != null && id >= 0 && id < supportedPackets.numBits() && supportedPackets.get(id);
     }
 
-    public void onSync(PacketsAckPacket packet) {
+    public void onSync(DataAckPacket packet) {
         int count = packet.availablePackets.size();
         supportedPackets = new Bits(count);
         for(int i = 0; i < count; i++) {
             supportedPackets.set(i, packet.availablePackets.get(i));
         }
 
-        Events.fire(new PlayerPacketsSyncedEvent(player));
+        Events.fire(new PlayerDataSyncedEvent(player));
     }
 
 }
