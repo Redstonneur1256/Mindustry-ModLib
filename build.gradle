@@ -11,6 +11,7 @@ ext {
 
 allprojects {
     apply plugin: 'java-library'
+    apply plugin: 'maven-publish'
     apply plugin: 'com.github.johnrengelman.shadow'
 
     repositories {
@@ -45,9 +46,8 @@ allprojects {
 }
 
 dependencies {
-    compileOnly('org.jetbrains:annotations:22.0.0')
-    compileOnly('com.github.Anuken:Mindustry:v126')
-    // compileOnly files("$androidSDK/platforms/android-31/android.jar")
+    compileOnly 'org.jetbrains:annotations:23.0.0'
+    compileOnly 'com.github.Anuken:Mindustry:v126'
 }
 
 if (androidSDK != null) {
@@ -79,5 +79,13 @@ if (androidSDK != null) {
         }
 
         from(zipTree(jarFile), zipTree(dexFile))
+    }
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+        }
     }
 }
