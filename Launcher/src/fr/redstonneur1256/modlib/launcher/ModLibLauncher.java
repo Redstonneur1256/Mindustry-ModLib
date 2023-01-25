@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import fr.redstonneur1256.modlib.common.ModLibProperties;
 import fr.redstonneur1256.modlib.launcher.mixin.MixinClassLoader;
 import fr.redstonneur1256.modlib.launcher.mixin.ModLibMixinService;
+import fr.redstonneur1256.modlib.launcher.util.ThrowingBiConsumer;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 import org.spongepowered.asm.launch.MixinBootstrap;
@@ -11,17 +12,17 @@ import org.spongepowered.asm.mixin.MixinEnvironment;
 import org.spongepowered.asm.mixin.Mixins;
 import org.spongepowered.asm.service.MixinService;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.*;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.nio.file.Files;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
 public class ModLibLauncher {
@@ -72,44 +73,61 @@ public class ModLibLauncher {
             Gson gson = new Gson();
             List<String> extraArguments = new ArrayList<>(Arrays.asList(Arrays.copyOfRange(args, 3, args.length)));
 
+            ThrowingBiConsumer<InputStream, Predicate<String>, IOException> modHandler = (stream, predicate) -> {
+                try(Reader reader = new InputStreamReader(stream)) {
+                    JsonObject metadata = JsonValue.readHjson(reader).asObject();
+
+                    JsonValue gameArguments = metadata.get("gameArguments");
+                    if(gameArguments != null && gameArguments.isArray()) {
+                        extraArguments.addAll(gameArguments
+                                .asArray()
+                                .values()
+                                .stream()
+                                .map(JsonValue::asString)
+                                .collect(Collectors.toList()));
+                    }
+
+                    Object name = metadata.get("name").asString();
+                    String mixinsPath = name + ".mixins.json";
+                    if(predicate.test(mixinsPath)) {
+                        Mixins.addConfiguration(mixinsPath);
+                    }
+                }
+            };
+
             // Add mods to classloader and load mixins
             File[] modFiles = modsDirectory.listFiles();
             if(modFiles != null) {
                 for(File file : modFiles) {
+                    loader.addURL(file.toURI().toURL());
+
                     if(file.isDirectory()) {
+                        Optional<File> optional = Arrays.stream(META_FILES)
+                                .map(meta -> new File(file, meta))
+                                .filter(File::exists)
+                                .findFirst();
+                        if(optional.isPresent()) {
+                            modHandler.accept(Files.newInputStream(optional.get().toPath()), name -> new File(file, name).exists());
+                        }
                         continue;
                     }
-                    try(ZipFile zip = new ZipFile(file)) {
-                        loader.addURL(file.toURI().toURL());
-                        Optional<ZipEntry> optional = Arrays.stream(META_FILES)
-                                .map(zip::getEntry)
-                                .filter(Objects::nonNull)
-                                .findFirst();
-                        if(!optional.isPresent()) {
-                            continue;
-                        }
-                        try(Reader reader = new InputStreamReader(zip.getInputStream(optional.get()))) {
-                            JsonObject metadata = JsonValue.readHjson(reader).asObject();
 
-                            JsonValue gameArguments = metadata.get("gameArguments");
-                            if(gameArguments != null && gameArguments.isArray()) {
-                                extraArguments.addAll(gameArguments
-                                        .asArray()
-                                        .values()
-                                        .stream()
-                                        .map(JsonValue::asString)
-                                        .collect(Collectors.toList()));
+                    try {
+                        try(ZipFile zip = new ZipFile(file)) {
+                            Optional<ZipEntry> optional = Arrays.stream(META_FILES)
+                                    .map(zip::getEntry)
+                                    .filter(Objects::nonNull)
+                                    .findFirst();
+                            if(optional.isPresent()) {
+                                modHandler.accept(zip.getInputStream(optional.get()), name -> zip.getEntry(name) != null);
                             }
-
-                            Object name = metadata.get("name").asString();
-                            String mixinsPath = name + ".mixins.json";
-
-                            if(zip.getEntry(mixinsPath) != null) {
-                                Mixins.addConfiguration(mixinsPath);
-                            }
+                        } catch(ZipException exception) {
+                            System.err.println("Potentially corrupted jar file " + file);
+                            exception.printStackTrace();
                         }
-                    } catch(IOException ignored) {
-                        // Not a zipped mod, ignore
+                    } catch(IOException exception) {
+                        System.err.println("Exception trying to read mod meta:");
+                        exception.printStackTrace();
                     }
                 }
             }

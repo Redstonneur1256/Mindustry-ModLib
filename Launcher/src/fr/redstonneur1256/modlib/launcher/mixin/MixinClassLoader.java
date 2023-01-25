@@ -91,9 +91,6 @@ public class MixinClassLoader extends URLClassLoader {
             if(clazz == null) {
                 throw new ClassNotFoundException(name);
             }
-
-            // System.out.println(clazz.getName() + " -> " + clazz.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
-
             return clazz;
         } catch(ClassNotFoundException exception) {
             throw exception;
