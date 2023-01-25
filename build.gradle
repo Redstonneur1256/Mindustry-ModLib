@@ -1,12 +1,9 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
+import java.time.Instant
+
 plugins {
-    id 'com.github.johnrengelman.shadow' version '5.2.0'
-}
-
-group 'fr.redstonneur1256'
-version '1.0'
-
-ext {
-    androidSDK = System.getenv('ANDROID_HOME') ?: System.getenv('ANDROID_SDK_ROOT')
+    id 'com.github.johnrengelman.shadow' version '7.1.2' apply false
 }
 
 allprojects {
@@ -14,9 +11,13 @@ allprojects {
     apply plugin: 'maven-publish'
     apply plugin: 'com.github.johnrengelman.shadow'
 
+    group project.parent == null ? 'fr.redstonneur1256' : project.parent.group + '.' + project.parent.name
+    version System.getenv('GITHUB_VERSION') ?: 'dev'
+
     repositories {
         mavenCentral()
         maven { url 'https://jitpack.io' }
+        maven { url 'https://repo.spongepowered.org/repository/maven-public/' }
     }
 
     java {
@@ -36,6 +37,17 @@ allprojects {
         test.resources.srcDirs = []
     }
 
+    processResources {
+        filesMatching((Iterable<String>) ['*.properties', 'mod.json']) {
+            filter(ReplaceTokens, tokens: [
+                    version: version,
+                    build  : System.getenv('GITHUB_SHA') ?: 'dev',
+                    built  : Instant.now().toString()
+            ])
+        }
+        outputs.upToDateWhen{ false }
+    }
+
     tasks.withType(JavaCompile) {
         options.encoding = 'UTF-8'
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -43,49 +55,12 @@ allprojects {
     }
 
     shadowJar.archiveName(project.name + '.jar')
-}
 
-dependencies {
-    compileOnly 'org.jetbrains:annotations:23.0.0'
-    compileOnly 'com.github.Anuken:Mindustry:v126'
-}
-
-if (androidSDK != null) {
-    task buildAndDex(type: Jar) {
-        dependsOn(tasks.shadowJar)
-        archiveName(project.name + '-dexed.jar')
-
-        File dexFile = new File(tasks.buildAndDex.temporaryDir, 'dex.jar')
-        File jarFile = tasks.shadowJar.archiveFile.get().asFile
-
-        doFirst {
-            exec {
-                workingDir(tasks.buildAndDex.temporaryDir)
-
-                File d8path = new File(new File(new File(androidSDK), 'build-tools').listFiles().last(), 'd8.bat')
-                File platforms = new File(androidSDK, 'platforms')
-                File androidJar = platforms.listFiles().reverse().find { it.isDirectory() && new File(it, 'android.jar').exists() }
-                List<File> files = configurations.compileClasspath.asList() + configurations.runtimeClasspath.asList() + [new File(androidJar, 'android.jar')]
-
-                List<String> command = [
-                    d8path,
-                    *files.collect { "--classpath $it.path" },
-                    '--min-api', '14',
-                    '--output', dexFile, jarFile
-                ]
-
-                commandLine('cmd', '/C', command.join(' '))
+    publishing {
+        publications {
+            maven(MavenPublication) {
+                from components.java
             }
-        }
-
-        from(zipTree(jarFile), zipTree(dexFile))
-    }
-}
-
-publishing {
-    publications {
-        maven(MavenPublication) {
-            from components.java
         }
     }
 }

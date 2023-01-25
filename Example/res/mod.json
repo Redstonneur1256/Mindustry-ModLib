@@ -1,8 +1,14 @@
 {
-  "name": "testing",
+  "name": "modlib-example",
+  "displayName": "ModLib Examples",
+  "subtitle": "Code samples for ModLib",
+  "author": "Redstonneur1256",
   "version": "1.0",
-  "minGameVersion": "126",
+  "minGameVersion": 140,
   "hidden": true,
-  "dependencies": ["!mod-library"],
+  "dependencies": [
+    "!mod-library"
+  ],
+  "java": true,
   "main": "fr.redstonneur1256.examplemod.MainMod"
 }

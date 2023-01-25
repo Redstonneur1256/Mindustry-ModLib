@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "fr.redstonneur1256.modlib.launcher.mixins",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "ModsMixin",
+    "VarsMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

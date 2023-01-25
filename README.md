@@ -1,38 +1,51 @@
 # Mindustry-ModLib
-Library to help developers creating Mindustry mods and optimize some game features
+Library to help developers creating Mindustry mods and optimize some game features  
+If you think some utility or optimization should be added open an issue describing the feature.
 
-If you are a mod a developer and there is a utility you would like to see just to open an issue
+✔ **Fully compatible with vanilla servers/clients !**
 
-✔ **Fully compatible with vanilla servers !**
-
-🕑 V7 WIP
-
-Current utilities:
+Current development tools:
 -----
 
-* Registrable packets (up to 32767 packets don't worry about vanilla)
-* Packet replies
-* Call like classes supporting return values
-* Advanced TypeIO
+* Class mixins
+* No packet limit
+* Packet chaining (sending replies to received packets)
+* `Call` like classes supporting custom parameters and return values
+* Synchronized registrable types in TypeIO
 
-Current game optimizations:
+Current game utilities/optimizations:
 -----
 
-* 📶 Optimized threads for server list ping in V6
+* 📃 Logger showing calling class name
+* 📶 Optimized server ping & dns lookup, no longer creating a billion threads
+* 📶 Button to refresh the whole server list at once
 
-Include in your project:
+Using the library:
 -----
 Latest version: ![Jitpack version](https://jitpack.io/v/Redstonneur1256/Mindustry-ModLib.svg)
 
-```groovy
-repositories {
-    mavenCentral()
-    maven { url 'https://jitpack.io/' }
-}
+- Add the dependency using JitPack on Gradle:
+  ```groovy
+    repositories {
+        mavenCentral()
+        maven { url 'https://jitpack.io/' }
+        maven { url 'https://repo.spongepowered.org/repository/maven-public/' }
+    }
+    
+    dependencies {
+        compileOnly 'com.github.Redstonneur1256.Mindustry-ModLib:Mod:VERSION'
+    }
+  ```
+- Update your `mod.json`/`plugin.json` to add the library as a dependency.
+  ```json
+  "dependencies": [
+    "!mod-library"
+  ]
+  ```
 
-dependencies {
-    implementation 'com.github.Redstonneur1256:Mindustry-ModLib:VERSION'
-}
-```
+See the `Example` module for usage examples.
 
-See the `Example` module for examples
+Contributors:
+-------
+
+Special thanks to [Eliott SRL](https://github.com/Eliott-Srl) for making the icon.

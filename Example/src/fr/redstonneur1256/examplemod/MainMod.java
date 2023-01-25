@@ -1,5 +1,6 @@
 package fr.redstonneur1256.examplemod;
 
+import fr.redstonneur1256.examplemod.net.CustomCallExample;
 import mindustry.mod.Mod;
 
 public class MainMod extends Mod {

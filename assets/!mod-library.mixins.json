@@ -1,0 +1,19 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "fr.redstonneur1256.modlib.mixins",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "net.CallMixin",
+    "net.NetMixin",
+    "net.arc.ArcConnectionMixin",
+    "net.arc.ArcPacketSerializerMixin",
+    "net.packets.StreamBeginMixin",
+    "net.packets.StreamBuilderMixin",
+    "ui.JoinDialogMixin",
+    "ui.ModsDialogMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

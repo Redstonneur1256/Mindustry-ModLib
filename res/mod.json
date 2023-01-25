@@ -1,9 +1,0 @@
-{
-  "name": "!mod-library",
-  "displayName": "Mod Library",
-  "description": "Utilities to help modders",
-  "version": "1.0",
-  "minGameVersion": 126,
-  "hidden": true,
-  "main": "fr.redstonneur1256.modlib.ModLib"
-}

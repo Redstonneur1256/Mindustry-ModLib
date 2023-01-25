@@ -1,0 +1,20 @@
+dependencies {
+    api "com.github.Anuken.Arc:arc-core:$mindustryVersion"
+    api "com.github.Anuken.Mindustry:core:$mindustryVersion"
+    implementation 'org.jetbrains:annotations:23.1.0'
+    compileOnly project(':Common')
+    compileOnly project(':Launcher')
+    compileOnlyApi "org.spongepowered:mixin:$spongeMixinVersion"
+}
+
+task packJar(type: Jar) {
+    archiveName = 'ModLib.jar'
+    from { project(':Launcher').shadowJar }
+    with shadowJar
+}
+
+sourceSets.main.resources.srcDirs = ["$rootDir.absolutePath/assets/"]
+
+if(file('private.gradle').exists()) {
+    apply from: 'private.gradle'
+}

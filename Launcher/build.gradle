@@ -1,0 +1,31 @@
+dependencies {
+    compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
+    compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
+
+    implementation project(':Common')
+    implementation "org.spongepowered:mixin:$spongeMixinVersion"
+    implementation "org.ow2.asm:asm-tree:$asmVersion"
+    implementation "org.ow2.asm:asm-commons:$asmVersion"
+    implementation "org.ow2.asm:asm-util:$asmVersion"
+    implementation 'com.google.guava:guava:31.1-jre'
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'org.hjson:hjson:3.0.0'
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'fr.redstonneur1256.modlib.launcher.ModLibLauncher'
+    }
+}
+
+shadowJar.archiveFileName = 'ModLib-launcher.jar'
+task buildAndCopy {
+    dependsOn(tasks.shadowJar)
+    doLast {
+        Thread.sleep(1000)
+        copy {
+            from "$buildDir/libs/${shadowJar.archiveFileName.get()}"
+            into "C:\\Users\\Silas\\AppData\\Roaming\\Mindustry\\tmp"
+        }
+    }
+}
