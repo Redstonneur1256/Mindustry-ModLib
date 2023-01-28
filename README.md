@@ -4,7 +4,7 @@ If you think some utility or optimization should be added open an issue describi
 
 ![Release version](https://img.shields.io/github/v/release/Redstonneur1256/Mindustry-ModLib?style=for-the-badge)
 ![JitPack version](https://img.shields.io/jitpack/version/com.github.Redstonneur1256/Mindustry-ModLib?style=for-the-badge)
-![Mod download count](https://img.shields.io/github/downloads/Redstonneur1256/Mindustry-ModLib/latest/total?label=Mod%20downloads&style=for-the-badge)
+![Mod download count](https://img.shields.io/github/downloads/Redstonneur1256/Mindustry-ModLib/total?label=Mod%20downloads&style=for-the-badge)
 ![License](https://img.shields.io/github/license/Redstonneur1256/Mindustry-ModLib?style=for-the-badge)
 
 ✔ **Fully compatible with vanilla servers/clients !**
