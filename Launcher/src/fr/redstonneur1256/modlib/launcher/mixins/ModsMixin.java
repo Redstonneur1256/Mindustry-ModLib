@@ -108,7 +108,16 @@ public abstract class ModsMixin {
                     Version.isAtLeast(meta.minGameVersion) &&
                     (meta.getMinMajor() >= 136 || headless)) {
 
-                Class<?> main = Class.forName(mainClass, true, ModLibLauncher.loader);
+                Class<?> main;
+
+                try {
+                    main = Class.forName(mainClass, true, ModLibLauncher.loader);
+                }catch(ClassNotFoundException exception) {
+                    // Mod might be imported right now so is not present
+                    ModLibLauncher.loader.addURL(sourceFile.file().toURI().toURL());
+                    main = Class.forName(mainClass, true, ModLibLauncher.loader);
+                }
+
 
                 //detect mods that incorrectly package mindustry in the jar
                 if((main.getSuperclass().getName().equals("mindustry.mod.Plugin") || main.getSuperclass().getName().equals("mindustry.mod.Mod")) &&
