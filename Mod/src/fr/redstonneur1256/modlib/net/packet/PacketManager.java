@@ -23,6 +23,8 @@ import java.io.IOException;
 @SuppressWarnings("unchecked")
 public class PacketManager {
 
+    public static final int FRAMEWORK_MESSAGE_ID = 254; // -2 on 8 bits
+
     /**
      * All registered packets
      */
@@ -72,15 +74,24 @@ public class PacketManager {
     }
 
     public static void resetPacketValues(boolean host) {
+        int activePacketCount = host ? registeredPackets.size : vanillaPacketCount;
+
         activePackets.clear();
-        activePackets.addAll(registeredPackets, 0, host ? registeredPackets.size : vanillaPacketCount);
-
+        activePackets.ensureCapacity(activePacketCount);
         packetIds.clear();
-        packetIds.ensureCapacity(activePackets.size);
+        packetIds.ensureCapacity(activePacketCount);
 
-        int i = 0;
-        for(ClassEntry<?> entry : activePackets) {
-            packetIds.put(entry.type, i++);
+        activePackets.addAll(registeredPackets, 0, Math.min(activePacketCount, FRAMEWORK_MESSAGE_ID));
+        if(activePacketCount >= FRAMEWORK_MESSAGE_ID) {
+            activePackets.add((ClassEntry<?>) null); // fake framework message
+            activePackets.addAll(registeredPackets, FRAMEWORK_MESSAGE_ID, activePacketCount - FRAMEWORK_MESSAGE_ID);
+        }
+
+        for(int i = 0; i < activePackets.size; i++) {
+            ClassEntry<?> entry = activePackets.get(i);
+            if(entry != null) {
+                packetIds.put(entry.type, i);
+            }
         }
     }
 
@@ -104,7 +115,7 @@ public class PacketManager {
     public static void writeAvailablePackets(DataOutput stream) throws IOException {
         stream.writeInt(activePackets.size);
         for(ClassEntry<?> entry : activePackets) {
-            stream.writeUTF(entry.type.getName());
+            stream.writeUTF(entry == null ? "ae" : entry.type.getName());
         }
     }
 

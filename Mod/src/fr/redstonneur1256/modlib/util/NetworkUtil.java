@@ -30,17 +30,17 @@ public class NetworkUtil {
         int read;
 
         do {
-            read = byteReader.get() & 0xFF;
-            value |= read << (7 * shift);
-            shift++;
+            read = byteReader.get();
+            value |= (read & 0x7F) << shift;
+            shift += 7;
         } while((read & 0x80) != 0);
 
         return value;
     }
 
     public static void writeExtendedByte(Intc byteWriter, int value) {
-        while((value & 0xFFFFFF80) != 0) {
-            byteWriter.get(((value & 0x7F) | 0x80));
+        while((value & ~0x7F) != 0) {
+            byteWriter.get((value & 0x7F) | 0x80);
             value >>>= 7;
         }
         byteWriter.get(value);

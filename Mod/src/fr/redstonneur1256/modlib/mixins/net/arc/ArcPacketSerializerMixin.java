@@ -7,6 +7,7 @@ import arc.util.io.Writes;
 import fr.redstonneur1256.modlib.net.ClassEntry;
 import fr.redstonneur1256.modlib.net.MNet;
 import fr.redstonneur1256.modlib.net.packet.PacketManager;
+import fr.redstonneur1256.modlib.util.NetworkUtil;
 import mindustry.net.ArcNetProvider;
 import mindustry.net.Packet;
 import mindustry.net.Packets;
@@ -37,7 +38,7 @@ public abstract class ArcPacketSerializerMixin {
             return;
         }
         if(object instanceof FrameworkMessage) {
-            buffer.put((byte) -2);
+            buffer.put((byte) PacketManager.FRAMEWORK_MESSAGE_ID);
             writeFramework(buffer, (FrameworkMessage) object);
             return;
         }
@@ -56,12 +57,7 @@ public abstract class ArcPacketSerializerMixin {
                 return;
             }
 
-            if(id <= 0x7F) {
-                buffer.put((byte) id);
-            } else {
-                buffer.put((byte) (id >> 8 & 0x7F | 0x80));
-                buffer.put((byte) (id & 0xFF));
-            }
+            NetworkUtil.writeExtendedByte(buffer, id);
 
             ByteBuffer packetBuffer = decompressBuffer.get();
             packetBuffer.position(0);
@@ -96,14 +92,13 @@ public abstract class ArcPacketSerializerMixin {
      */
     @Overwrite
     public Object read(ByteBuffer buffer) {
-        int id = buffer.get();
-        if(id == -2) {
+        int id = buffer.get() & 0xFF;
+        if(id == PacketManager.FRAMEWORK_MESSAGE_ID) {
             return readFramework(buffer);
         }
 
-        if((id & 0x80) != 0) {
-            id = (id & 0x7F) << 8 | buffer.get();
-        }
+        buffer.position(buffer.position() - 1);
+        id = NetworkUtil.readExtendedByte(buffer::get);
 
         ByteBuffer packetBuffer = decompressBuffer.get();
         int length = buffer.getShort() & 0xffff;
