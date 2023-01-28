@@ -7,6 +7,7 @@ import fr.redstonneur1256.modlib.launcher.mixin.ModLibMixinService;
 import fr.redstonneur1256.modlib.launcher.util.ThrowingBiConsumer;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
+import org.hjson.ParseException;
 import org.spongepowered.asm.launch.MixinBootstrap;
 import org.spongepowered.asm.mixin.MixinEnvironment;
 import org.spongepowered.asm.mixin.Mixins;
@@ -101,18 +102,18 @@ public class ModLibLauncher {
                 for(File file : modFiles) {
                     loader.addURL(file.toURI().toURL());
 
-                    if(file.isDirectory()) {
-                        Optional<File> optional = Arrays.stream(META_FILES)
-                                .map(meta -> new File(file, meta))
-                                .filter(File::exists)
-                                .findFirst();
-                        if(optional.isPresent()) {
-                            modHandler.accept(Files.newInputStream(optional.get().toPath()), name -> new File(file, name).exists());
-                        }
-                        continue;
-                    }
-
                     try {
+                        if(file.isDirectory()) {
+                            Optional<File> optional = Arrays.stream(META_FILES)
+                                    .map(meta -> new File(file, meta))
+                                    .filter(File::exists)
+                                    .findFirst();
+                            if(optional.isPresent()) {
+                                modHandler.accept(Files.newInputStream(optional.get().toPath()), name -> new File(file, name).exists());
+                            }
+                            continue;
+                        }
+
                         try(ZipFile zip = new ZipFile(file)) {
                             Optional<ZipEntry> optional = Arrays.stream(META_FILES)
                                     .map(zip::getEntry)
@@ -125,7 +126,7 @@ public class ModLibLauncher {
                             System.err.println("Potentially corrupted jar file " + file);
                             exception.printStackTrace();
                         }
-                    } catch(IOException exception) {
+                    } catch(IOException | ParseException exception) {
                         System.err.println("Exception trying to read mod meta:");
                         exception.printStackTrace();
                     }
