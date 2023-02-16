@@ -1,4 +1,4 @@
-package fr.redstonneur1256.modlib.common;
+package fr.redstonneur1256.modlib;
 
 import java.time.Instant;
 import java.util.Properties;

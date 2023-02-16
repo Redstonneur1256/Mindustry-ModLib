@@ -15,7 +15,6 @@ import arc.util.io.Reads;
 import arc.util.io.Writes;
 import arc.util.serialization.SerializationException;
 import fr.redstonneur1256.modlib.events.net.server.PreServerHostEvent;
-import fr.redstonneur1256.modlib.func.FuncI;
 import fr.redstonneur1256.modlib.util.NetworkUtil;
 import mindustry.Vars;
 import mindustry.ctype.Content;
@@ -27,6 +26,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.BitSet;
+import java.util.function.IntFunction;
 
 /**
  * TypeIO like but supports registering more types for {@link #readObject(Reads)} and {@link #writeObject(Writes, Object)}
@@ -74,7 +74,7 @@ public class MTypeIO {
         registerSerializer(Building.class, TypeIO::readBuilding, TypeIO::writeBuilding);
     }
 
-    public static <T> void registerArraySerializer(Class<T[]> type, FuncI<T[]> constructor, Func<Reads, T> reader, Cons2<Writes, T> writer) {
+    public static <T> void registerArraySerializer(Class<T[]> type, IntFunction<T[]> constructor, Func<Reads, T> reader, Cons2<Writes, T> writer) {
         registerSerializer(type,
                 reads -> readArray(reads, constructor, () -> reader.get(reads)),
                 (writes, array) -> writeArray(writes, array, element -> writer.get(writes, element)));
@@ -209,9 +209,9 @@ public class MTypeIO {
         }
     }
 
-    public static <T> T[] readArray(Reads reads, FuncI<T[]> constructor, Prov<T> reader) {
+    public static <T> T[] readArray(Reads reads, IntFunction<T[]> constructor, Prov<T> reader) {
         int count = reads.i();
-        T[] array = constructor.get(count);
+        T[] array = constructor.apply(count);
         for(int i = 0; i < count; i++) {
             array[i] = reader.get();
         }

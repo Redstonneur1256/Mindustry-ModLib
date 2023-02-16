@@ -2,7 +2,7 @@ package fr.redstonneur1256.modlib.ui;
 
 import arc.Core;
 import arc.util.Log;
-import fr.redstonneur1256.modlib.common.ModLibProperties;
+import fr.redstonneur1256.modlib.ModLibProperties;
 import fr.redstonneur1256.modlib.launcher.ModLibLauncher;
 import fr.redstonneur1256.modlib.ui.settings.LabelSetting;
 import mindustry.Vars;

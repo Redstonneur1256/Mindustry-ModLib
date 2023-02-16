@@ -1,4 +1,4 @@
-package fr.redstonneur1256.modlib.launcher.util;
+package fr.redstonneur1256.modlib.function;
 
 public interface ThrowingBiConsumer<T, U, E extends Throwable> {
 

@@ -6,7 +6,9 @@ import arc.net.Connection;
 import arc.struct.IntMap;
 import arc.struct.Seq;
 import fr.redstonneur1256.modlib.MVars;
+import fr.redstonneur1256.modlib.net.ArcConnectionPing;
 import fr.redstonneur1256.modlib.net.MNet;
+import fr.redstonneur1256.modlib.net.NetworkDebuggable;
 import fr.redstonneur1256.modlib.net.WaitingListener;
 import fr.redstonneur1256.modlib.net.packet.MConnection;
 import fr.redstonneur1256.modlib.net.packet.MPacket;
@@ -14,6 +16,7 @@ import fr.redstonneur1256.modlib.net.packet.MPlayerConnection;
 import fr.redstonneur1256.modlib.net.packet.PacketManager;
 import fr.redstonneur1256.modlib.net.packets.DataAckPacket;
 import fr.redstonneur1256.modlib.util.StreamSender;
+import mindustry.net.ArcNetProvider;
 import mindustry.net.Streamable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -21,12 +24,15 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.BitSet;
 import java.util.concurrent.TimeUnit;
 
 @Mixin(targets = "mindustry.net.ArcNetProvider$ArcConnection")
-public abstract class ArcConnectionMixin implements MPlayerConnection, MConnection {
+public abstract class ArcConnectionMixin implements MPlayerConnection, MConnection, NetworkDebuggable {
 
     @Shadow
     @Final
@@ -36,6 +42,11 @@ public abstract class ArcConnectionMixin implements MPlayerConnection, MConnecti
     private IntMap<WaitingListener<?>> listeners = new IntMap<>();
     private BitSet supportedPackets;
     private Seq<String> supportedCallClasses;
+
+    @Inject(method = "<init>", at = @At("RETURN"))
+    private void init(ArcNetProvider this$0, String address, Connection connection, CallbackInfo ci) {
+        connection.addListener(new ArcConnectionPing(connection));
+    }
 
     @Override
     public void handleSyncPacket(DataAckPacket packet) {
@@ -101,6 +112,11 @@ public abstract class ArcConnectionMixin implements MPlayerConnection, MConnecti
     @Override
     public void received(MPacket packet) {
         MNet.handlePacket(packet, listeners);
+    }
+
+    @Override
+    public long getPing() {
+        return connection.getReturnTripTime();
     }
 
     @Shadow

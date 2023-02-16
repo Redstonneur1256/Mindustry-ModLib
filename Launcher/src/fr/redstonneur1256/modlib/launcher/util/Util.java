@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 public class Util {
+
     public static byte[] readFully(InputStream stream) throws IOException {
         ByteArrayOutputStream output = new ByteArrayOutputStream(stream.available());
         byte[] buffer = new byte[8192];

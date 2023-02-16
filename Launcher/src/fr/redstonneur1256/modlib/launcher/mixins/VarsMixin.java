@@ -49,7 +49,7 @@ public class VarsMixin {
                     className = elements[index++].getClassName();
                 } while(hiddenClasses.contains(className));
                 String name = className;
-                String caller = simpleClassNames.get(name, () -> name.substring(name.lastIndexOf('.') + 1));
+                String caller = Log.level == Log.LogLevel.debug ? name : simpleClassNames.get(name, () -> name.substring(name.lastIndexOf('.') + 1));
 
                 int ordinal = level.ordinal();
                 String levelName = levels[ordinal];

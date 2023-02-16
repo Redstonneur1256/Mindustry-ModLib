@@ -4,6 +4,7 @@
   "package": "fr.redstonneur1256.modlib.mixins",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
+    "entity.PlayerMixin",
     "net.CallMixin",
     "net.NetMixin",
     "net.arc.ArcConnectionMixin",

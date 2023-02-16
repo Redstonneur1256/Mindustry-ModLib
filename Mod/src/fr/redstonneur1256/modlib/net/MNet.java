@@ -42,6 +42,9 @@ public class MNet implements MConnection {
     private UdpConnectionManager udpConnectionManager;
     private SimpleDns dns;
     private ServerPing ping;
+    /**
+     * Scheduler used for player pings on server side and packet timeouts
+     */
     private ScheduledExecutorService scheduler;
     private ExecutorService executor;
     private int nonce;

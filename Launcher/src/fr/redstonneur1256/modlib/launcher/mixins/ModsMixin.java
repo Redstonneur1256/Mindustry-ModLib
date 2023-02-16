@@ -15,10 +15,13 @@ import mindustry.mod.Plugin;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Locale;
 
-import static mindustry.Vars.*;
+import static mindustry.Vars.headless;
 
 @Mixin(Mods.class)
 public abstract class ModsMixin {
@@ -33,6 +36,9 @@ public abstract class ModsMixin {
 
     @Shadow
     public abstract boolean skipModLoading();
+
+    @Shadow
+    private boolean requiresReload;
 
     /**
      * @author Redstonneur1256
@@ -112,7 +118,7 @@ public abstract class ModsMixin {
 
                 try {
                     main = Class.forName(mainClass, true, ModLibLauncher.loader);
-                }catch(ClassNotFoundException exception) {
+                } catch(ClassNotFoundException exception) {
                     // Mod might be imported right now so is not present
                     ModLibLauncher.loader.addURL(sourceFile.file().toURI().toURL());
                     main = Class.forName(mainClass, true, ModLibLauncher.loader);
@@ -164,6 +170,25 @@ public abstract class ModsMixin {
             }
             throw throwable;
         }
+    }
+
+    @Inject(method = "removeMod", at = @At("HEAD"), cancellable = true)
+    public void removeMod(Mods.LoadedMod mod, CallbackInfo ci) {
+        ci.cancel();
+
+        if(mod.root instanceof ZipFi) {
+            mod.root.delete(); // this actually closes the file handle
+        }
+
+        mod.file.deleteDirectory();
+
+        // When a mod is deleted the game is automatically restarted afterward, use the new process to delete
+        // the files once we are sure they are closed
+        ModLibLauncher.filesToDelete.add(mod.file.file());
+
+        mods.remove(mod);
+        mod.dispose();
+        requiresReload = true;
     }
 
 }

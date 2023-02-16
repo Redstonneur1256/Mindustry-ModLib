@@ -6,12 +6,15 @@ import arc.util.Log;
 import arc.util.OS;
 import arc.util.Strings;
 import mindustry.Vars;
+import mindustry.core.Version;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+@ApiStatus.Internal
 public class LauncherInitializer {
 
     public static boolean isInitialized() {
@@ -34,7 +37,7 @@ public class LauncherInitializer {
         Fi launcherFile = Vars.tmpDirectory.child("ModLib-launcher.jar");
 
         try {
-            Log.info("Extracting ModLib launcher...");
+            Log.info("[ModLib] Extracting ModLib launcher...");
             InputStream stream = LauncherInitializer.class.getResourceAsStream("/ModLib-launcher.jar");
             if(stream == null) {
                 Log.warn("[ModLib] Missing internal launcher file");
@@ -55,6 +58,7 @@ public class LauncherInitializer {
             command.add(new File(Vars.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getAbsolutePath());
             command.add(Vars.dataDirectory.absolutePath());
             command.add(String.valueOf(Vars.headless));
+            command.add(Version.combined());
 
             if(Core.settings.getBool("modlib.antialiasing", false)) {
                 command.add("-antialias");
@@ -63,7 +67,7 @@ public class LauncherInitializer {
                 command.add("-debug");
             }
 
-            Log.info("Running command '@'", Strings.join("' '", command));
+            Log.info("[ModLib] Running command '@'", Strings.join("' '", command));
 
             ProcessBuilder builder = new ProcessBuilder(command);
 

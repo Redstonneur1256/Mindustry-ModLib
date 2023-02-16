@@ -49,7 +49,7 @@ public class MixinClassLoader extends URLClassLoader {
 
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
-        long start = System.currentTimeMillis();
+        long start = System.nanoTime();
         try {
             int lastIndex = name.lastIndexOf('.');
             String packageName = lastIndex == -1 ? "" : name.substring(0, lastIndex);
@@ -70,7 +70,6 @@ public class MixinClassLoader extends URLClassLoader {
                 url = new URL("file:/" + URLEncoder.encode(file.getName(), "UTF-8"));
 
                 if(file.getManifest() != null) {
-
                     signers = file.getJarEntry(classFileName).getCodeSigners();
 
                     if(getPackage(packageName) == null) {
@@ -80,7 +79,6 @@ public class MixinClassLoader extends URLClassLoader {
             } else if(getPackage(packageName) == null) {
                 definePackage(packageName, null, null, null, null, null, null, null);
             }
-
 
             byte[] rawClass = Util.readFully(connection.getInputStream());
             byte[] transformed = (byte[]) method.invoke(transformer, name, name, rawClass);
@@ -100,12 +98,16 @@ public class MixinClassLoader extends URLClassLoader {
             }
             throw new RuntimeException(throwable);
         } finally {
-            totalFindTime += System.currentTimeMillis() - start;
+            totalFindTime += System.nanoTime() - start;
         }
     }
 
     public long getTotalFindTime() {
         return totalFindTime;
+    }
+
+    public double getTotalFindTimeMs() {
+        return totalFindTime / 1_000_000.0;
     }
 
 }
