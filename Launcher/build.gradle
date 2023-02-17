@@ -7,8 +7,8 @@ dependencies {
     implementation "org.ow2.asm:asm-tree:$asmVersion"
     implementation "org.ow2.asm:asm-commons:$asmVersion"
     implementation "org.ow2.asm:asm-util:$asmVersion"
-    implementation 'com.google.guava:guava:31.1-jre'
-    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation "com.google.guava:guava:$guavaVersion"
+    implementation "com.google.code.gson:gson:$gsonVersion"
     implementation 'org.hjson:hjson:3.0.0'
 }
 
@@ -19,7 +19,7 @@ jar {
 }
 
 shadowJar.archiveFileName = 'ModLib-launcher.jar'
-task buildAndCopy {
+tasks.register('buildAndCopy') {
     dependsOn(tasks.shadowJar)
     doLast {
         Thread.sleep(1000)
