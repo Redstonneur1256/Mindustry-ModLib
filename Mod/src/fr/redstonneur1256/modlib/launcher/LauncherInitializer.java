@@ -12,6 +12,7 @@ import org.jetbrains.annotations.ApiStatus;
 
 import java.io.File;
 import java.io.InputStream;
+import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -51,9 +52,16 @@ public class LauncherInitializer {
 
             List<String> command = new ArrayList<>(8);
             command.add(System.getProperty("java.home") + File.separator + "bin" + File.separator + "java" + (OS.isWindows ? ".exe" : ""));
+
             if(OS.isMac) {
                 command.add("-XstartOnFirstThread");
             }
+            try {
+                command.addAll(ManagementFactory.getRuntimeMXBean().getInputArguments());
+            } catch(SecurityException exception) {
+                Log.err("Unable to add current java arguments", exception);
+            }
+
             command.add("-jar");
             command.add(launcherFile.absolutePath());
 
