@@ -7,6 +7,7 @@ import arc.util.io.ByteBufferOutput;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 
 public class NetworkUtil {
@@ -48,6 +49,15 @@ public class NetworkUtil {
 
     public static void writeExtendedByte(ByteBuffer buffer, int value) {
         writeExtendedByte(i -> buffer.put((byte) i), value);
+    }
+
+    /**
+     * Utility method to call {@link Buffer}'s clear method directly because it's being overridden by the classes extending
+     * {@link Buffer} in new Java versions and compiling in a new version would result in wrong signatures causing a
+     * {@link NoSuchMethodException}
+     */
+    public static void clear(Buffer buffer) {
+        buffer.clear();
     }
 
 }

@@ -4,6 +4,7 @@ import arc.func.Cons;
 import arc.util.Log;
 import arc.util.Threads;
 import arc.util.UnsafeRunnable;
+import fr.redstonneur1256.modlib.util.NetworkUtil;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -116,7 +117,7 @@ public class UdpConnectionManager {
                         try {
                             ByteBuffer buffer = connection.getReceiveBuffer();
 
-                            buffer.clear();
+                            NetworkUtil.clear(buffer);
                             channel.receive(buffer);
                             buffer.flip();
 

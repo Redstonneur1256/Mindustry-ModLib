@@ -7,8 +7,10 @@ import arc.net.dns.SRVRecord;
 import arc.struct.Seq;
 import arc.util.Log;
 import fr.redstonneur1256.modlib.net.udp.UdpConnectionManager;
+import fr.redstonneur1256.modlib.util.NetworkUtil;
 
 import java.net.InetSocketAddress;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
@@ -96,7 +98,7 @@ public class SimpleDns {
                 callback.get(records.sort());
             });
 
-            buffer.clear();
+            NetworkUtil.clear(buffer);
             buffer.putShort(id);             // Id
             buffer.putShort((short) 0x0100); // Flags (recursion enabled)
             buffer.putShort((short) 1);      // Questions
