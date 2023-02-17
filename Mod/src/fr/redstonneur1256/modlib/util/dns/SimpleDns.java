@@ -10,7 +10,6 @@ import fr.redstonneur1256.modlib.net.udp.UdpConnectionManager;
 import fr.redstonneur1256.modlib.util.NetworkUtil;
 
 import java.net.InetSocketAddress;
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 

@@ -4,6 +4,7 @@ import arc.Core;
 import arc.files.Fi;
 import arc.util.Log;
 import arc.util.OS;
+import arc.util.Reflect;
 import arc.util.Strings;
 import mindustry.Vars;
 import mindustry.core.Version;
@@ -12,6 +13,7 @@ import org.jetbrains.annotations.ApiStatus;
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @ApiStatus.Internal
@@ -65,6 +67,16 @@ public class LauncherInitializer {
             }
             if(Core.settings.getBool("modlib.debug", false)) {
                 command.add("-debug");
+            }
+
+            if(Vars.headless) {
+                try {
+                    Class<?> serverLauncher = Class.forName("mindustry.server.ServerLauncher");
+                    String[] args = Reflect.get(serverLauncher, "args");
+                    command.addAll(Arrays.asList(args));
+                } catch(ClassNotFoundException | RuntimeException exception) {
+                    Log.err("Could not get servers arguments", exception);
+                }
             }
 
             Log.info("[ModLib] Running command '@'", Strings.join("' '", command));

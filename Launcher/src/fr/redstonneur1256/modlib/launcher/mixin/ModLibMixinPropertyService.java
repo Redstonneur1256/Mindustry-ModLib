@@ -5,26 +5,12 @@ import org.spongepowered.asm.service.IPropertyKey;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
-// TODO: Type safety
 @SuppressWarnings("unchecked")
 public class ModLibMixinPropertyService implements IGlobalPropertyService {
 
     private Map<IPropertyKey, Object> values = new HashMap<>();
-
-    private static class Key implements IPropertyKey {
-
-        private final String name;
-
-        Key(String name) {
-            this.name = name;
-        }
-
-        String getName() {
-            return name;
-        }
-
-    }
 
     @Override
     public IPropertyKey resolveKey(String name) {
@@ -49,6 +35,34 @@ public class ModLibMixinPropertyService implements IGlobalPropertyService {
     @Override
     public String getPropertyString(IPropertyKey key, String defaultValue) {
         return (String) values.getOrDefault(key, defaultValue);
+    }
+
+    private static class Key implements IPropertyKey {
+
+        private final String name;
+
+        public Key(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return "Key{name='" + name + "'}";
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if(this == o) return true;
+            if(o == null || getClass() != o.getClass()) return false;
+            Key key = (Key) o;
+            return Objects.equals(name, key.name);
+        }
+
+        @Override
+        public int hashCode() {
+            return name != null ? name.hashCode() : 0;
+        }
+
     }
 
 }
