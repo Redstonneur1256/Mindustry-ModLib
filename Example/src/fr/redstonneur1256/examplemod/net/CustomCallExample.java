@@ -4,6 +4,7 @@ import arc.Core;
 import arc.Events;
 import arc.input.KeyCode;
 import arc.util.Log;
+import fr.redstonneur1256.examplemod.ExampleKeyBinds;
 import fr.redstonneur1256.modlib.MVars;
 import fr.redstonneur1256.modlib.net.call.CallResult;
 import fr.redstonneur1256.modlib.net.call.Execution;
@@ -53,7 +54,7 @@ public class CustomCallExample {
         // For the client side, every game tick:
         Events.run(EventType.Trigger.update, () -> {
             // Check if the key J has been tapped
-            if(Core.input.keyTap(KeyCode.j) && Vars.net.client()) {
+            if(Core.input.keyTap(ExampleKeyBinds.demo) && Vars.net.client()) {
 
                 // From client side we need to check if the call class is available on the server using MVars.net.isCallAvailable
                 // Trying to use an unavailable call class will lead in a NoSuchMethodError

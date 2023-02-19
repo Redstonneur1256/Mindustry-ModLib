@@ -17,6 +17,7 @@ Current development tools:
 * Packet chaining (sending replies to received packets)
 * `Call` like classes supporting custom parameters and return values
 * Synchronized registrable types in TypeIO
+* Custom keybind registration
 
 Current game utilities/optimizations:
 -----

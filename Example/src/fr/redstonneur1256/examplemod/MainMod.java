@@ -12,6 +12,9 @@ public class MainMod extends Mod {
 
     @Override
     public void init() {
+        // Register custom keybindings (needed by all the examples, do not comment)
+        ExampleKeyBinds.register();
+
         // Uncomment the demo you want to test
 
         // Send custom packets to the server/client

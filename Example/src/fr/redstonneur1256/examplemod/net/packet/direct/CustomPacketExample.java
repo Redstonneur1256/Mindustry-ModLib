@@ -2,8 +2,8 @@ package fr.redstonneur1256.examplemod.net.packet.direct;
 
 import arc.Core;
 import arc.Events;
-import arc.input.KeyCode;
 import arc.util.Log;
+import fr.redstonneur1256.examplemod.ExampleKeyBinds;
 import fr.redstonneur1256.modlib.MVars;
 import fr.redstonneur1256.modlib.events.net.PlayerDataSyncedEvent;
 import fr.redstonneur1256.modlib.net.packet.MConnection;
@@ -68,7 +68,7 @@ public class CustomPacketExample {
         Events.run(EventType.Trigger.update, () -> {
 
             // Check if the key J has been tapped, and we are connected to a server
-            if(Core.input.keyTap(KeyCode.j) && Vars.net.client()) {
+            if(Core.input.keyTap(ExampleKeyBinds.demo) && Vars.net.client()) {
 
                 // Check if the server we are currently connected on support this packet
                 // If you try to send the packet on a server where it's not supported it will be

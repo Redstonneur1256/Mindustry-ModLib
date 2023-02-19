@@ -4,6 +4,7 @@
   "package": "fr.redstonneur1256.modlib.mixins",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
+    "KeyBindsMixin",
     "entity.PlayerMixin",
     "net.CallMixin",
     "net.NetMixin",
@@ -12,6 +13,7 @@
     "net.packets.StreamBeginMixin",
     "net.packets.StreamBuilderMixin",
     "ui.JoinDialogMixin",
+    "ui.KeyBindDialogMixin",
     "ui.ModsDialogMixin"
   ],
   "injectors": {
