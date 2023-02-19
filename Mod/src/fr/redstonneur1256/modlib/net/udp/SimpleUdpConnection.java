@@ -37,6 +37,7 @@ public class SimpleUdpConnection {
         checkClosed();
 
         lastPacketTime = System.currentTimeMillis();
+        manager.reorder(this);
 
         try {
             channel.send(buffer, address);
@@ -66,6 +67,7 @@ public class SimpleUdpConnection {
 
     protected void handle(ByteBuffer buffer) {
         lastPacketTime = System.currentTimeMillis();
+        manager.reorder(this);
 
         if(packetHandler != null) {
             packetHandler.get(buffer);

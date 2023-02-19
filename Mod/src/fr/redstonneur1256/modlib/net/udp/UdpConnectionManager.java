@@ -156,6 +156,13 @@ public class UdpConnectionManager {
         submit(() -> connections.remove(connection));
     }
 
+    protected void reorder(SimpleUdpConnection connection) {
+        submit(() -> {
+            connections.remove(connection);
+            connections.add(connection);
+        });
+    }
+
     public Thread getThread() {
         return thread;
     }
