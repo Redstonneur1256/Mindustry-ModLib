@@ -8,6 +8,7 @@ import arc.struct.Seq;
 import arc.util.Log;
 import arc.util.Time;
 import fr.redstonneur1256.modlib.launcher.ModLibLauncher;
+import mindustry.Vars;
 import mindustry.core.Version;
 import mindustry.mod.Mod;
 import mindustry.mod.Mods;
@@ -175,6 +176,11 @@ public abstract class ModsMixin {
     @Inject(method = "removeMod", at = @At("HEAD"), cancellable = true)
     public void removeMod(Mods.LoadedMod mod, CallbackInfo ci) {
         ci.cancel();
+
+        if(mod.loader != null) {
+            Vars.ui.showErrorMessage("@ui.mods.mod.deleteLoaded");
+            return;
+        }
 
         if(mod.root instanceof ZipFi) {
             mod.root.delete(); // this actually closes the file handle
