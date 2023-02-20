@@ -2,14 +2,14 @@ dependencies {
     compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
     compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
 
-    implementation project(':Common')
-    implementation "org.spongepowered:mixin:$spongeMixinVersion"
-    implementation "org.ow2.asm:asm-tree:$asmVersion"
-    implementation "org.ow2.asm:asm-commons:$asmVersion"
-    implementation "org.ow2.asm:asm-util:$asmVersion"
-    implementation "com.google.guava:guava:$guavaVersion"
-    implementation "com.google.code.gson:gson:$gsonVersion"
-    implementation 'org.hjson:hjson:3.0.0'
+    api project(':Common')
+    api "org.spongepowered:mixin:$spongeMixinVersion"
+    api "org.ow2.asm:asm-tree:$asmVersion"
+    api "org.ow2.asm:asm-commons:$asmVersion"
+    api "org.ow2.asm:asm-util:$asmVersion"
+    api "com.google.guava:guava:$guavaVersion"
+    api "com.google.code.gson:gson:$gsonVersion"
+    api "org.hjson:hjson:$hjsonVersion"
 }
 
 jar {
@@ -19,13 +19,7 @@ jar {
 }
 
 shadowJar.archiveFileName = 'ModLib-launcher.jar'
-tasks.register('buildAndCopy') {
-    dependsOn(tasks.shadowJar)
-    doLast {
-        Thread.sleep(1000)
-        copy {
-            from "$buildDir/libs/${shadowJar.archiveFileName.get()}"
-            into "C:\\Users\\Silas\\AppData\\Roaming\\Mindustry\\tmp"
-        }
-    }
+
+if(file('private.gradle').exists()) {
+    apply from: 'private.gradle'
 }

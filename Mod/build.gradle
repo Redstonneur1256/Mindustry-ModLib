@@ -1,14 +1,9 @@
 dependencies {
     // compileOnly because common and launcher classes are provided by the launcher
-    compileOnly project(':Common')
-    compileOnly project(':Launcher')
+    compileOnlyApi project(':Launcher')
 
     compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
     compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
-
-    compileOnlyApi "org.spongepowered:mixin:$spongeMixinVersion"
-    compileOnlyApi "com.google.guava:guava:$guavaVersion"
-    compileOnlyApi "com.google.code.gson:gson:$gsonVersion"
 }
 
 tasks.register('packJar', Jar) {
