@@ -8,7 +8,7 @@
   "version": "@version@",
   "build": "@build@",
   "built": "@built@",
-  "minGameVersion": 141,
+  "minGameVersion": 142,
   "hidden": true,
   "java": true,
   "main": "fr.redstonneur1256.modlib.ModLib"
