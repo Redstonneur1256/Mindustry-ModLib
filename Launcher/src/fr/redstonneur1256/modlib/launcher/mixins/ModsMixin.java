@@ -55,7 +55,7 @@ public abstract class ModsMixin {
      * @reason load the mods using our existing classloader
      */
     @Overwrite
-    private Mods.LoadedMod loadMod(Fi sourceFile, boolean overwrite) throws Exception {
+    private Mods.LoadedMod loadMod(Fi sourceFile, boolean overwrite, boolean initialize) throws Exception {
         ZipFi zip = null;
         try {
             long start = Time.millis();
@@ -113,7 +113,8 @@ public abstract class ModsMixin {
                     !skipModLoading() &&
                     Core.settings.getBool("mod-" + baseName + "-enabled", true) &&
                     Version.isAtLeast(meta.minGameVersion) &&
-                    (meta.getMinMajor() >= 136 || headless)) {
+                    (meta.getMinMajor() >= 136 || headless) &&
+                    initialize) {
 
                 Class<?> main;
 
