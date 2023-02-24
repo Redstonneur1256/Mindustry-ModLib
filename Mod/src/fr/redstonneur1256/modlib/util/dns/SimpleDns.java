@@ -3,7 +3,6 @@ package fr.redstonneur1256.modlib.util.dns;
 import arc.func.Cons;
 import arc.math.Rand;
 import arc.net.dns.ArcDns;
-import arc.net.dns.SRVRecord;
 import arc.struct.Seq;
 import arc.util.Log;
 import fr.redstonneur1256.modlib.net.udp.UdpConnectionManager;
@@ -17,6 +16,9 @@ import java.nio.charset.StandardCharsets;
  * Non-blocking DNS Resolution utility class like {@link ArcDns}
  */
 public class SimpleDns {
+
+    public static final int TYPE_A = 1;
+    public static final int TYPE_SRV = 33;
 
     private UdpConnectionManager manager;
     private Rand random;
@@ -32,16 +34,25 @@ public class SimpleDns {
         this.buffer = ByteBuffer.allocate(512);
     }
 
-    public void resolveSRV(String domain, Cons<Seq<SRVRecord>> callback) {
-        resolveSRV(ArcDns.getNameservers(), 0, domain, callback);
+    public void resolveA(String domain, Cons<Seq<ARecord>> callback) {
+        resolve(TYPE_A, domain, ARecord::new, callback);
     }
 
-    private void resolveSRV(Seq<InetSocketAddress> servers, int serverIndex, String domain, Cons<Seq<SRVRecord>> callback) {
+    public void resolveSRV(String domain, Cons<Seq<SrvRecord>> callback) {
+        resolve(TYPE_SRV, domain, SrvRecord::new, callback);
+    }
+
+    public <R extends DnsRecord> void resolve(int type, String domain, RecordReader<R> reader, Cons<Seq<R>> callback) {
+        resolveInternal(ArcDns.getNameservers(), 0, type, domain, reader, callback);
+    }
+
+    private <R extends DnsRecord> void resolveInternal(Seq<InetSocketAddress> servers, int serverIndex, int type, String domain,
+                                                       RecordReader<R> reader, Cons<Seq<R>> callback) {
         if(serverIndex >= servers.size) {
             return;
         }
         manager.connect(servers.get(serverIndex), 2000, buffer, connection -> {
-            connection.setTimeoutHandler(() -> resolveSRV(servers, serverIndex + 1, domain, callback));
+            connection.setTimeoutHandler(() -> resolveInternal(servers, serverIndex + 1, type, domain, reader, callback));
 
             short id = (short) random.nextInt(Short.MAX_VALUE);
 
@@ -50,7 +61,7 @@ public class SimpleDns {
 
                 short responseId = buffer.getShort();
                 if(responseId != id) {
-                    resolveSRV(servers, serverIndex + 1, domain, callback);
+                    resolveInternal(servers, serverIndex + 1, type, domain, reader, callback);
                     Log.warn("Invalid response from DNS server @", servers.get(serverIndex));
                     return;
                 }
@@ -69,32 +80,29 @@ public class SimpleDns {
                 buffer.getShort();
                 buffer.getShort();
 
-                Seq<SRVRecord> records = new Seq<>(answers);
+                Seq<R> records = new Seq<>(answers);
 
                 for(int i = 0; i < answers; i++) {
-                    buffer.getShort();                         // OFFSET
-                    buffer.getShort();                         // Type
-                    buffer.getShort();                         // Class
-                    long ttl = buffer.getInt() & 0xFFFFFFFFL;  // TTL
-                    buffer.getShort();                         // Data length
+                    buffer.getShort();                           // OFFSET
+                    int answerType = buffer.getShort() & 0xFFFF; // Type
+                    buffer.getShort();                           // Class
+                    long ttl = buffer.getInt() & 0xFFFFFFFFL;    // TTL
+                    int length = buffer.getShort() & 0xFFFF;     // Data length
 
-                    int priority = buffer.getShort();
-                    int weight = buffer.getShort();
-                    int port = buffer.getShort();
-
-                    StringBuilder builder = new StringBuilder();
-                    while((len = buffer.get()) != 0) {
-                        for(int j = 0; j < len; j++) {
-                            builder.append((char) buffer.get());
-                        }
-                        builder.append('.');
+                    // Optionally CNAME results will be returned with the A results, skip those
+                    if(answerType != type) {
+                        buffer.position(buffer.position() + length);
+                        continue;
                     }
-                    builder.delete(builder.length() - 1, builder.length());
 
-                    records.add(new SRVRecord(ttl, priority, weight, port, builder.toString()));
+                    int position = buffer.position();
+
+                    records.add(reader.read(ttl, buffer));
+
+                    buffer.position(position + length);
                 }
 
-                callback.get(records.sort());
+                callback.get(records);
             });
 
             NetworkUtil.clear(buffer);
@@ -112,12 +120,18 @@ public class SimpleDns {
             }
             buffer.put((byte) 0);
 
-            buffer.putShort((short) 33);     // Type (SRV)
+            buffer.putShort((short) type);   // Type
             buffer.putShort((short) 1);      // Class (Internet)
 
             buffer.flip();
             connection.send(buffer);
         });
+    }
+
+    public interface RecordReader<R extends DnsRecord> {
+
+        R read(long ttl, ByteBuffer buffer);
+
     }
 
 }

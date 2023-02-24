@@ -2,20 +2,23 @@ package fr.redstonneur1256.modlib.net;
 
 import arc.Core;
 import arc.func.Cons;
-import arc.net.dns.SRVRecord;
 import arc.util.Time;
 import fr.redstonneur1256.modlib.net.udp.UdpConnectionManager;
+import fr.redstonneur1256.modlib.util.dns.ARecord;
 import fr.redstonneur1256.modlib.util.dns.SimpleDns;
+import fr.redstonneur1256.modlib.util.dns.SrvRecord;
 import mindustry.net.Host;
 import mindustry.net.NetworkIO;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeoutException;
+import java.util.regex.Pattern;
 
 public class ServerPing {
 
     private static final ByteBuffer PING_HEADER = ByteBuffer.wrap(new byte[] { -2, 1 });
+    private static final Pattern IP_PATTERN = Pattern.compile("(\\b25[0-5]|\\b2[0-4][0-9]|\\b[01]?[0-9][0-9]?)(\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}");
 
     private UdpConnectionManager connectionManager;
     private SimpleDns dns;
@@ -33,7 +36,7 @@ public class ServerPing {
                 Core.app.post(() -> failure.get(new TimeoutException()));
                 return;
             }
-            SRVRecord record = records.get(0);
+            SrvRecord record = records.min(SrvRecord::compareTo); // Do not sort the whole list, just get the best one
             pingInternal(record.target, record.port, callback, () -> Core.app.post(() -> failure.get(new TimeoutException())));
         }));
     }
@@ -41,11 +44,20 @@ public class ServerPing {
     private void pingInternal(String address, int port, Cons<Host> callback, Runnable failure) {
         long start = Time.millis();
 
-        InetSocketAddress socketAddress = new InetSocketAddress(address, port);
-        if(socketAddress.isUnresolved()) {
-            failure.run();
+        if(!IP_PATTERN.matcher(address).matches()) {
+            dns.resolveA(address, records -> {
+                if(records.isEmpty()) {
+                    failure.run();
+                    return;
+                }
+                ARecord record = records.get(0);
+                pingInternal(record.getAddressAsString(), port, callback, failure);
+            });
             return;
         }
+
+        // Safe to create, no resolution since it has to be an IP
+        InetSocketAddress socketAddress = new InetSocketAddress(address, port);
 
         connectionManager.connect(socketAddress, 2000, buffer, connection -> {
             connection.setTimeoutHandler(failure);
