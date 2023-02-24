@@ -43,7 +43,10 @@ public class NetMixin {
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void init(Net.NetProvider provider, CallbackInfo ci) {
-        pingExecutor.shutdown();
+        // Foo's client moved the pingExecutor initialisation inside the pingHost method causing this to crash the game
+        if(pingExecutor != null) {
+            pingExecutor.shutdown();
+        }
     }
 
     @Inject(method = "pingHost", at = @At("HEAD"), cancellable = true)
