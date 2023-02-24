@@ -3,14 +3,17 @@ package fr.redstonneur1256.modlib.util.dns;
 import arc.func.Cons;
 import arc.math.Rand;
 import arc.net.dns.ArcDns;
+import arc.struct.IntMap;
 import arc.struct.Seq;
 import arc.util.Log;
 import fr.redstonneur1256.modlib.net.udp.UdpConnectionManager;
 import fr.redstonneur1256.modlib.util.NetworkUtil;
+import fr.redstonneur1256.modlib.util.VariableCache;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 
 /**
  * Non-blocking DNS Resolution utility class like {@link ArcDns}
@@ -27,11 +30,13 @@ public class SimpleDns {
      * connection manager thread
      */
     private ByteBuffer buffer;
+    private IntMap<VariableCache<String, Seq<DnsRecord>>> caches;
 
     public SimpleDns(UdpConnectionManager manager) {
         this.manager = manager;
         this.random = new Rand();
         this.buffer = ByteBuffer.allocate(512);
+        this.caches = new IntMap<>();
     }
 
     public void resolveA(String domain, Cons<Seq<ARecord>> callback) {
@@ -42,8 +47,26 @@ public class SimpleDns {
         resolve(TYPE_SRV, domain, SrvRecord::new, callback);
     }
 
-    public <R extends DnsRecord> void resolve(int type, String domain, RecordReader<R> reader, Cons<Seq<R>> callback) {
-        resolveInternal(ArcDns.getNameservers(), 0, type, domain, reader, callback);
+    @SuppressWarnings("unchecked")
+    private <R extends DnsRecord> void resolve(int type, String domain, RecordReader<R> reader, Cons<Seq<R>> callback) {
+        manager.submit(() -> {
+            VariableCache<String, Seq<DnsRecord>> cache = caches.get(type, VariableCache::new);
+            Seq<DnsRecord> cachedValues = cache.get(domain);
+            if(cachedValues != null) {
+                callback.get((Seq<R>) cachedValues);
+                return;
+            }
+
+            resolveInternal(ArcDns.getNameservers(), 0, type, domain, reader, records -> {
+                if(records.any()) {
+                    // little race condition but not very important, checking for another current query of the same type
+                    // on the same domain and adding the callback would add much more complexity than it's worth.
+                    // It would also be very rare that the same domain would be looked up twice at the same time
+                    cache.put(domain, (Seq<DnsRecord>) records, Duration.ofSeconds(records.min(record -> (float) record.ttl).ttl));
+                }
+                callback.get(records);
+            });
+        });
     }
 
     private <R extends DnsRecord> void resolveInternal(Seq<InetSocketAddress> servers, int serverIndex, int type, String domain,

@@ -139,7 +139,7 @@ public class UdpConnectionManager {
         }
     }
 
-    protected void submit(UnsafeRunnable runnable) {
+    public void submit(UnsafeRunnable runnable) {
         checkShutdown();
 
         taskQueue.add(runnable);
