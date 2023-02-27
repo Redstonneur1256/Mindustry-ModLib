@@ -1,6 +1,7 @@
 package fr.redstonneur1256.modlib.launcher;
 
 import arc.Core;
+import arc.Events;
 import arc.files.Fi;
 import arc.util.Log;
 import arc.util.OS;
@@ -8,6 +9,7 @@ import arc.util.Reflect;
 import arc.util.Strings;
 import mindustry.Vars;
 import mindustry.core.Version;
+import mindustry.game.EventType;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.io.File;
@@ -111,7 +113,12 @@ public class LauncherInitializer {
             }
             Core.app.exit();
         } catch(Throwable throwable) {
-            Vars.ui.showException("ModLib failed to initialize, mods depending on it will not work properly.", throwable);
+            if(Vars.headless) {
+                Log.err("ModLib failed to initialize", throwable);
+                return;
+            }
+            Events.run(EventType.ClientLoadEvent.class, () -> Vars.ui.showException("ModLib failed to initialize, mods depending on it will not work properly.", throwable));
+
         }
     }
 
