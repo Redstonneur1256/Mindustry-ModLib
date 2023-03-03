@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
 public class ServerPing {
 
     private static final ByteBuffer PING_HEADER = ByteBuffer.wrap(new byte[] { -2, 1 });
-    private static final Pattern IP_PATTERN = Pattern.compile("(\\b25[0-5]|\\b2[0-4][0-9]|\\b[01]?[0-9][0-9]?)(\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}");
+    private static final Pattern IP_PATTERN = Pattern.compile("^(\\b25[0-5]|\\b2[0-4][0-9]|\\b[01]?[0-9][0-9]?)(\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$");
 
     private UdpConnectionManager connectionManager;
     private SimpleDns dns;
