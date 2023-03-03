@@ -52,6 +52,11 @@ public class LauncherInitializer {
             // Simulate the launch has ended before restarting the game to avoid all mods being disabled
             Vars.finishLaunch();
 
+            // Save the settings and disable auto-saving before the new process is launched to avoid them being saved at
+            // the same time they are loaded by the launcher possibly causing an EOF on some machines
+            Core.settings.autosave();
+            Core.settings.setAutosave(false);
+
             List<String> command = new ArrayList<>(8);
             command.add(System.getProperty("java.home") + File.separator + "bin" + File.separator + "java" + (OS.isWindows ? ".exe" : ""));
 
@@ -60,7 +65,7 @@ public class LauncherInitializer {
             }
             try {
                 command.addAll(ManagementFactory.getRuntimeMXBean().getInputArguments());
-            } catch(SecurityException exception) {
+            } catch(Throwable exception) {
                 Log.err("Unable to add current java arguments", exception);
             }
 
@@ -113,12 +118,14 @@ public class LauncherInitializer {
             }
             Core.app.exit();
         } catch(Throwable throwable) {
+            // Startup failed, revert changes that could cause problems
+            Core.settings.setAutosave(true);
+
             if(Vars.headless) {
                 Log.err("ModLib failed to initialize", throwable);
                 return;
             }
             Events.run(EventType.ClientLoadEvent.class, () -> Vars.ui.showException("ModLib failed to initialize, mods depending on it will not work properly.", throwable));
-
         }
     }
 

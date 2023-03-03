@@ -37,7 +37,7 @@ public class ArcSettings {
     }
 
     public void load(InputStream input) throws IOException {
-        DataInput stream = new DataInputStream(input);
+        DataInput stream = new DataInputStream(new BufferedInputStream(input, 8192));
         int count = stream.readInt();
 
         for(int i = 0; i < count; i++) {
