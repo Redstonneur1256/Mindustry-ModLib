@@ -45,7 +45,7 @@ allprojects {
                     built  : Instant.now().toString()
             ])
         }
-        outputs.upToDateWhen{ false }
+        outputs.upToDateWhen { false }
     }
 
     tasks.withType(JavaCompile).configureEach {
