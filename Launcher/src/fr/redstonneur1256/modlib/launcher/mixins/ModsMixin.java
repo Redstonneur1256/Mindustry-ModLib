@@ -8,6 +8,7 @@ import arc.struct.Seq;
 import arc.util.Log;
 import arc.util.Time;
 import fr.redstonneur1256.modlib.launcher.ModLibLauncher;
+import fr.redstonneur1256.modlib.launcher.mixin.MixinClassLoader;
 import mindustry.Vars;
 import mindustry.core.Version;
 import mindustry.mod.Mod;
@@ -47,7 +48,7 @@ public abstract class ModsMixin {
      */
     @Overwrite
     public ClassLoader mainLoader() {
-        return ModLibLauncher.loader;
+        return ModLibLauncher.launcher.loader;
     }
 
     /**
@@ -107,6 +108,8 @@ public abstract class ModsMixin {
                 }
             }
 
+            MixinClassLoader loader = null;
+
             //make sure the main class exists before loading it; if it doesn't just don't put it there
             //if the mod is explicitly marked as java, try loading it anyway
             if((mainFile.exists() || meta.java) &&
@@ -117,13 +120,14 @@ public abstract class ModsMixin {
                     initialize) {
 
                 Class<?> main;
+                loader = ModLibLauncher.launcher.loader;
 
                 try {
-                    main = Class.forName(mainClass, true, ModLibLauncher.loader);
+                    main = Class.forName(mainClass, true, loader);
                 } catch(ClassNotFoundException exception) {
                     // Mod might be imported right now so is not present
-                    ModLibLauncher.loader.addURL(sourceFile.file().toURI().toURL());
-                    main = Class.forName(mainClass, true, ModLibLauncher.loader);
+                    loader.addURL(sourceFile.file().toURI().toURL());
+                    main = Class.forName(mainClass, true, loader);
                 }
 
 
@@ -165,7 +169,7 @@ public abstract class ModsMixin {
                 Log.info("Loaded mod '@' in @ms", meta.name, Time.timeSinceMillis(start));
             }
 
-            return new Mods.LoadedMod(sourceFile, directory, mainMod, ModLibLauncher.loader, meta);
+            return new Mods.LoadedMod(sourceFile, directory, mainMod, loader, meta);
         } catch(Throwable throwable) {
             if(zip != null) {
                 zip.delete();
@@ -188,10 +192,6 @@ public abstract class ModsMixin {
         }
 
         mod.file.deleteDirectory();
-
-        // When a mod is deleted the game is automatically restarted afterward, use the new process to delete
-        // the files once we are sure they are closed
-        ModLibLauncher.filesToDelete.add(mod.file.file());
 
         mods.remove(mod);
         mod.dispose();

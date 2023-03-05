@@ -14,7 +14,7 @@ public class ModLibMixinByteCodeProvider implements IClassBytecodeProvider {
 
     @Override
     public ClassNode getClassNode(String name) throws ClassNotFoundException, IOException {
-        InputStream stream = ModLibLauncher.loader.getResourceAsStream(name.replace('.', '/') + ".class");
+        InputStream stream = ModLibLauncher.launcher.loader.getResourceAsStream(name.replace('.', '/') + ".class");
         if(stream == null) {
             throw new ClassNotFoundException(name);
         }

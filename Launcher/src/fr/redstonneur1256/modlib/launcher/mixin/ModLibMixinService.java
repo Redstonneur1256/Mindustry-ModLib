@@ -94,7 +94,7 @@ public class ModLibMixinService extends MixinServiceAbstract {
 
     @Override
     public InputStream getResourceAsStream(String name) {
-        return ModLibLauncher.loader.getResourceAsStream(name);
+        return ModLibLauncher.launcher.loader.getResourceAsStream(name);
     }
 
     @Override

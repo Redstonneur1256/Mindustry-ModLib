@@ -20,8 +20,8 @@ public class ModsDialogMixin extends BaseDialog {
 
     @Inject(method = "reload", at = @At("HEAD"))
     public void reload(CallbackInfo ci) {
-        ModLibLauncher.restartGame = true;
-        ModLibLauncher.fastRestart = false;
+        ModLibLauncher.launcher.restartGame = true;
+        ModLibLauncher.launcher.fastRestart = false;
     }
 
     @Inject(
@@ -39,4 +39,5 @@ public class ModsDialogMixin extends BaseDialog {
         desc.add(mod.meta.version).growX().wrap().padTop(2);
         desc.row();
     }
+
 }
