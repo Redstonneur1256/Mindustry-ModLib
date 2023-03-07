@@ -1,18 +1,17 @@
 package fr.redstonneur1256.modlib.launcher.mixin;
 
+import com.google.common.collect.ImmutableList;
 import fr.redstonneur1256.modlib.launcher.ModLibLauncher;
 import org.spongepowered.asm.launch.platform.container.ContainerHandleVirtual;
 import org.spongepowered.asm.launch.platform.container.IContainerHandle;
 import org.spongepowered.asm.logging.ILogger;
 import org.spongepowered.asm.logging.LoggerAdapterConsole;
-import org.spongepowered.asm.logging.LoggerAdapterDefault;
 import org.spongepowered.asm.mixin.MixinEnvironment;
 import org.spongepowered.asm.service.*;
 import org.spongepowered.asm.util.IConsumer;
 
 import java.io.InputStream;
 import java.util.Collection;
-import java.util.Collections;
 
 public class ModLibMixinService extends MixinServiceAbstract {
 
@@ -84,7 +83,7 @@ public class ModLibMixinService extends MixinServiceAbstract {
 
     @Override
     public Collection<String> getPlatformAgents() {
-        return Collections.emptySet();
+        return ImmutableList.of("fr.redstonneur1256.modlib.launcher.mixin.ModLibMixinPlatformServiceAgent");
     }
 
     @Override
@@ -100,8 +99,10 @@ public class ModLibMixinService extends MixinServiceAbstract {
     @Override
     protected ILogger createLogger(String name) {
         LoggerAdapterConsole logger = new LoggerAdapterConsole("ModLib-" + name);
-        logger.setDebugStream(System.out);
-        return new LoggerAdapterDefault(name);
+        if(ModLibLauncher.launcher.debug()) {
+            logger.setDebugStream(System.out);
+        }
+        return logger;
     }
 
 }

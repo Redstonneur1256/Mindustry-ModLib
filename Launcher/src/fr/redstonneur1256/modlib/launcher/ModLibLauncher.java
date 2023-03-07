@@ -98,7 +98,7 @@ public class ModLibLauncher {
     private final String[] rawArgs;
     private final File mindustryExecutable;
     private final File gameDirectory;
-    private final boolean server;
+    public final boolean server;
     private final List<String> extraArguments;
     private final File modsDirectory;
     public final ArcSettings settings;
@@ -259,5 +259,8 @@ public class ModLibLauncher {
         }
     }
 
+    public boolean debug() {
+        return Arrays.asList(rawArgs).contains("-debug");
+    }
 
 }
