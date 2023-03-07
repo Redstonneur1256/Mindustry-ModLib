@@ -56,10 +56,7 @@ public class MixinClassLoader extends URLClassLoader {
             String classFileName = name.replace('.', '/') + ".class";
 
             URL url = getResource(classFileName);
-            if(url == null) {
-                throw new ClassNotFoundException(name);
-            }
-            URLConnection connection = url.openConnection();
+            URLConnection connection = url == null ? null : url.openConnection();
 
             CodeSigner[] signers = null;
             if(lastIndex != -1 && connection instanceof JarURLConnection) {
@@ -79,11 +76,14 @@ public class MixinClassLoader extends URLClassLoader {
             } else if(getPackage(packageName) == null) {
                 definePackage(packageName, null, null, null, null, null, null, null);
             }
-
-            byte[] rawClass = Util.readFully(connection.getInputStream());
+            byte[] rawClass = connection == null ? null : Util.readFully(connection.getInputStream());
             byte[] transformed = (byte[]) method.invoke(transformer, name, name, rawClass);
 
-            CodeSource codeSource = new CodeSource(url, signers);
+            if(transformed == null) {
+                throw new ClassNotFoundException(name);
+            }
+
+            CodeSource codeSource = url == null ? null : new CodeSource(url, signers);
 
             Class<?> clazz = defineClass(name, transformed, 0, transformed.length, codeSource);
             if(clazz == null) {
