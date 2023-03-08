@@ -23,12 +23,13 @@ import java.util.List;
 public class LauncherInitializer {
 
     public static boolean isInitialized() {
-        try {
-            Class.forName("fr.redstonneur1256.modlib.launcher.ModLibLauncher");
-            return true;
-        } catch(ClassNotFoundException ignored) {
-            return false;
-        }
+        return doesClassExist("fr.redstonneur1256.modlib.launcher.ModLibLauncher");
+    }
+
+    public static boolean isBundledJVM() {
+        // Bundled JVM is stripped down and only contains java.base, this might not be the best way to detect it,
+        // but it's a working way
+        return !doesClassExist("java.util.logging.Logger");
     }
 
     public static void initialize() {
@@ -46,6 +47,7 @@ public class LauncherInitializer {
             InputStream stream = LauncherInitializer.class.getResourceAsStream("/ModLib-launcher.jar");
             if(stream == null) {
                 Log.warn("[ModLib] Missing internal launcher file");
+                throw new RuntimeException("Missing internal launcher file");
             }
             launcherFile.write(stream, false);
 
@@ -59,6 +61,10 @@ public class LauncherInitializer {
 
             List<String> command = new ArrayList<>(8);
             command.add(System.getProperty("java.home") + File.separator + "bin" + File.separator + "java" + (OS.isWindows ? ".exe" : ""));
+
+            if(isBundledJVM()) {
+                command.add("-Dhttps.protocols=TLSv1.2,TLSv1.1,TLSv1");
+            }
 
             if(OS.isMac) {
                 command.add("-XstartOnFirstThread");
@@ -126,6 +132,15 @@ public class LauncherInitializer {
                 return;
             }
             Events.run(EventType.ClientLoadEvent.class, () -> Vars.ui.showException("ModLib failed to initialize, mods depending on it will not work properly.", throwable));
+        }
+    }
+
+    private static boolean doesClassExist(String name) {
+        try {
+            Class.forName(name);
+            return true;
+        } catch(ClassNotFoundException ignored) {
+            return false;
         }
     }
 
