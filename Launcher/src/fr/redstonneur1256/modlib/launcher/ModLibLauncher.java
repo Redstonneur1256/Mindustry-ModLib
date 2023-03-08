@@ -51,8 +51,6 @@ public class ModLibLauncher {
         String version = args[3];
 
         try {
-            Class.forName("com.google.common.base.Platform");
-
             List<String> extraArguments = new ArrayList<>(Arrays.asList(Arrays.copyOfRange(args, 4, args.length)));
 
             launcher = new ModLibLauncher(args, mindustryExecutable, gameDirectory, isServer, extraArguments);

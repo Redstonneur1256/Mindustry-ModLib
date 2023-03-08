@@ -7,7 +7,6 @@ dependencies {
     api "org.ow2.asm:asm-tree:$asmVersion"
     api "org.ow2.asm:asm-commons:$asmVersion"
     api "org.ow2.asm:asm-util:$asmVersion"
-    api "com.google.guava:guava:$guavaVersion"
     api "com.google.code.gson:gson:$gsonVersion"
     api "org.hjson:hjson:$hjsonVersion"
 }

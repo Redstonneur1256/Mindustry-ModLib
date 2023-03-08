@@ -1,6 +1,5 @@
 package fr.redstonneur1256.modlib.launcher.mixin;
 
-import com.google.common.collect.ImmutableList;
 import fr.redstonneur1256.modlib.launcher.ModLibLauncher;
 import org.spongepowered.asm.launch.platform.container.ContainerHandleVirtual;
 import org.spongepowered.asm.launch.platform.container.IContainerHandle;
@@ -12,6 +11,7 @@ import org.spongepowered.asm.util.IConsumer;
 
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.Collections;
 
 public class ModLibMixinService extends MixinServiceAbstract {
 
@@ -83,7 +83,7 @@ public class ModLibMixinService extends MixinServiceAbstract {
 
     @Override
     public Collection<String> getPlatformAgents() {
-        return ImmutableList.of("fr.redstonneur1256.modlib.launcher.mixin.ModLibMixinPlatformServiceAgent");
+        return Collections.singleton("fr.redstonneur1256.modlib.launcher.mixin.ModLibMixinPlatformServiceAgent");
     }
 
     @Override

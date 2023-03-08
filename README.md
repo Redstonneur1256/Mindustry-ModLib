@@ -34,7 +34,7 @@ Using the library:
     repositories {
         mavenCentral()
         maven { url 'https://jitpack.io/' }
-        maven { url 'https://repo.spongepowered.org/repository/maven-public/' }
+        maven { url 'https://repo.mc-skyplex.net/releases' }
     }
     
     dependencies {

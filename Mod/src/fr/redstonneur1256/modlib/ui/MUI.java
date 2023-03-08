@@ -23,7 +23,7 @@ public class MUI {
             table.pref(new LabelSetting("Built: [royal]" + DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss").format(LocalDateTime.ofInstant(ModLibProperties.BUILT, Calendar.getInstance().getTimeZone().toZoneId()))));
 
             table.checkPref("modlib.antialiasing", false, checked -> Vars.ui.settings.hidden(() -> ui.showInfoOnHidden("@modlib.settings.reload", () -> {
-                ModLibLauncher.restartGame = true;
+                ModLibLauncher.launcher.restartGame = true;
                 Core.app.exit();
             })));
             table.checkPref("modlib.debug", false, checked -> Log.level = checked ? Log.LogLevel.debug : Log.LogLevel.info);
