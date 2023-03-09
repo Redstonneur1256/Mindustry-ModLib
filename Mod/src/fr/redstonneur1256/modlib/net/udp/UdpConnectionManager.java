@@ -8,6 +8,7 @@ import fr.redstonneur1256.modlib.util.NetworkUtil;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.PortUnreachableException;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
@@ -122,6 +123,10 @@ public class UdpConnectionManager {
                             buffer.flip();
 
                             connection.handle(buffer);
+                        } catch(PortUnreachableException exception) {
+                            if(!connection.isClosed()) {
+                                connection.close(true);
+                            }
                         } catch(Throwable throwable) {
                             Log.err("Error reading from UDP connection", throwable);
                         }

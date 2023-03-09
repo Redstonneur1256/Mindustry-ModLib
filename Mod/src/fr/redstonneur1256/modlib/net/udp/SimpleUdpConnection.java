@@ -124,4 +124,8 @@ public class SimpleUdpConnection {
         this.packetHandler = packetHandler;
     }
 
+    public boolean isClosed() {
+        return closed;
+    }
+
 }
