@@ -26,7 +26,7 @@ public class EventUtil {
     }
 
     private static <T> RegisteredListener on(Object type, Cons<T> listener) {
-        events.get(type, Seq::new).add(listener);
+        events.get(type, () -> new Seq<>(Cons.class)).add(listener);
         return new RegisteredListener(type, listener);
     }
 
