@@ -1,6 +1,7 @@
 package fr.redstonneur1256.modlib.net.io;
 
 import arc.Events;
+import arc.audio.Sound;
 import arc.func.Cons;
 import arc.func.Cons2;
 import arc.func.Func;
@@ -72,6 +73,7 @@ public class MTypeIO {
         registerSerializer(Content.class, TypeIO::readContent, TypeIO::writeContent);
         registerSerializer(Unit.class, TypeIO::readUnit, TypeIO::writeUnit);
         registerSerializer(Building.class, TypeIO::readBuilding, TypeIO::writeBuilding);
+        registerSerializer(Sound.class, TypeIO::readSound, TypeIO::writeSound);
     }
 
     public static <T> void registerArraySerializer(Class<T[]> type, IntFunction<T[]> constructor, Func<Reads, T> reader, Cons2<Writes, T> writer) {

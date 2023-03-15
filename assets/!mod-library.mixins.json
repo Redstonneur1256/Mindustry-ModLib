@@ -6,6 +6,7 @@
   "mixins": [
     "KeyBindsMixin",
     "entity.PlayerMixin",
+    "gen.SoundsMixin",
     "net.CallMixin",
     "net.NetMixin",
     "net.arc.ArcConnectionMixin",
