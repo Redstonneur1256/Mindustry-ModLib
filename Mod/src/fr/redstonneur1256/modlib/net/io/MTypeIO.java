@@ -141,7 +141,7 @@ public class MTypeIO {
             int id = stream.readInt();
             String name = stream.readUTF();
             try {
-                Class<?> type = Class.forName(name);
+                Class<?> type = getType(name);
                 ObjectSerializer<?> serializer = registeredSerializers.get(type);
 
                 while(activeSerializers.size <= id) {
@@ -318,7 +318,7 @@ public class MTypeIO {
 
         Throwable throwable;
         try {
-            Class<?> clazz = Class.forName(exceptionClass);
+            Class<?> clazz = getType(exceptionClass);
 
             throwable = (Throwable) clazz.getDeclaredConstructor(String.class).newInstance(message);
         } catch(Exception exception) {
@@ -386,6 +386,31 @@ public class MTypeIO {
         byte[] bytes = bitSet.toByteArray();
         writes.i(bytes.length);
         writes.b(bytes);
+    }
+
+    public static Class<?> getType(String name) throws ClassNotFoundException {
+        switch(name) {
+            case "void":
+                return void.class;
+            case "boolean":
+                return boolean.class;
+            case "char":
+                return char.class;
+            case "byte":
+                return byte.class;
+            case "short":
+                return short.class;
+            case "int":
+                return int.class;
+            case "long":
+                return long.class;
+            case "float":
+                return float.class;
+            case "double":
+                return double.class;
+            default:
+                return Class.forName(name);
+        }
     }
 
 }

@@ -10,7 +10,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * A cache which unlike {@link com.google.common.cache.Cache} can have per value time to live
+ * A cache which can have per value time to live
  */
 public class VariableCache<K, V> {
 

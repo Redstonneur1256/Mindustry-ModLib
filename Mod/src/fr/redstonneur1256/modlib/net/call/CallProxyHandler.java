@@ -32,7 +32,7 @@ public class CallProxyHandler implements InvocationHandler {
             default:
                 int id = manager.getMethodId(method);
                 if(id == -1) {
-                    throw new NoSuchMethodError();
+                    throw new NoSuchMethodError("Method " + method.getName() + " is not available.");
                 }
 
                 CallMethod callMethod = manager.getActiveMethods().get(id);

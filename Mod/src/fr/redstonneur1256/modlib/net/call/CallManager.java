@@ -9,6 +9,7 @@ import arc.util.Log;
 import fr.redstonneur1256.modlib.MVars;
 import fr.redstonneur1256.modlib.events.net.client.ServerConnectEvent;
 import fr.redstonneur1256.modlib.events.net.server.PreServerHostEvent;
+import fr.redstonneur1256.modlib.net.io.MTypeIO;
 import fr.redstonneur1256.modlib.net.packet.MConnection;
 import fr.redstonneur1256.modlib.net.packets.CustomInvokePacket;
 import fr.redstonneur1256.modlib.net.packets.CustomInvokeResultPacket;
@@ -186,7 +187,7 @@ public class CallManager {
                     Class<?>[] parameters = new Class<?>[signature.getParameterCount()];
                     for(int j = 0; j < parameters.length; j++) {
                         name = signature.getParametersName()[j];
-                        parameters[j] = Class.forName(name);
+                        parameters[j] = MTypeIO.getType(name);
                     }
 
                     CallMethod method = callClass.getMethods().find(m -> m.getName().equals(signature.getName()) && Arrays.equals(m.getParameters(), parameters));
