@@ -25,6 +25,7 @@ Current game utilities/optimizations:
 * 📃 Logger showing calling class name
 * 📶 Optimized server ping & dns lookup, no longer creating a billion threads
 * 📶 Button to refresh the server list
+* 💥 Handled `Events` and `Timer` exceptions
 
 Using the library:
 -----

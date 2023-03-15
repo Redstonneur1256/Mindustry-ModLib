@@ -5,6 +5,8 @@
   "compatibilityLevel": "JAVA_8",
   "mixins": [
     "KeyBindsMixin",
+    "arc.EventsMixin",
+    "arc.TimerMixin",
     "entity.PlayerMixin",
     "gen.SoundsMixin",
     "net.CallMixin",
