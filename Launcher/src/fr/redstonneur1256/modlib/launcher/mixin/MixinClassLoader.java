@@ -7,6 +7,7 @@ import java.lang.reflect.Method;
 import java.net.*;
 import java.security.CodeSigner;
 import java.security.CodeSource;
+import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 public class MixinClassLoader extends URLClassLoader {
@@ -67,7 +68,10 @@ public class MixinClassLoader extends URLClassLoader {
                 url = new URL("file:/" + URLEncoder.encode(file.getName(), "UTF-8"));
 
                 if(file.getManifest() != null) {
-                    signers = file.getJarEntry(classFileName).getCodeSigners();
+                    JarEntry entry = file.getJarEntry(classFileName);
+                    if(entry != null) {
+                        signers = entry.getCodeSigners();
+                    }
 
                     if(getPackage(packageName) == null) {
                         definePackage(packageName, file.getManifest(), url);
