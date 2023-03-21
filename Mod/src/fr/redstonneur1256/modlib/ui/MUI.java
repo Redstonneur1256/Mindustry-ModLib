@@ -27,6 +27,7 @@ public class MUI {
                 Core.app.exit();
             })));
             table.checkPref("modlib.debug", false, checked -> Log.level = checked ? Log.LogLevel.debug : Log.LogLevel.info);
+            table.checkPref("modlib.versionWarning", true);
         });
     }
 

@@ -46,7 +46,7 @@ public class ModLibChunk implements SaveFileReader.CustomChunk {
         }
         String version = stream.readUTF();
 
-        if(!version.equals(ModLib.getVersion())) {
+        if(!version.equals(ModLib.getVersion()) && Core.settings.getBool("modlib.versionWarning", true)) {
             Vars.ui.showErrorMessage(Core.bundle.format("modlib.version.mismatch", ModLib.getVersion(), version));
         }
 
