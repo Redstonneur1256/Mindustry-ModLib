@@ -5,6 +5,7 @@ import arc.Events;
 import arc.func.Cons;
 import arc.net.Server;
 import arc.struct.IntMap;
+import arc.util.Log;
 import arc.util.Reflect;
 import arc.util.Threads;
 import arc.util.pooling.Pools;
@@ -71,19 +72,23 @@ public class MNet implements MConnection {
         Server server = Reflect.get(provider, "server");
 
         server.setDiscoveryHandler((address, handler) -> {
-            ServerListPingEvent event = Pools.obtain(ServerListPingEvent.class, ServerListPingEvent::new);
-            event.address = address;
-            event.offline = false;
-            event.setDefaults();
-            Events.fire(event);
+            try {
+                ServerListPingEvent event = Pools.obtain(ServerListPingEvent.class, ServerListPingEvent::new);
+                event.address = address;
+                event.offline = false;
+                event.setDefaults();
+                Events.fire(event);
 
-            if(!event.offline) {
-                ByteBuffer buffer = event.writeServerData();
-                buffer.position(0);
-                handler.respond(buffer);
+                if(!event.offline) {
+                    ByteBuffer buffer = event.writeServerData();
+                    buffer.position(0);
+                    handler.respond(buffer);
+                }
+
+                Pools.free(event);
+            } catch(Throwable throwable) {
+                Log.err("Exception processing server ping", throwable);
             }
-
-            Pools.free(event);
         });
 
         SaveVersion.addCustomChunk("ModLib", new ModLibChunk());
