@@ -14,7 +14,7 @@ public class PlayerMixin implements NetworkDebuggable {
 
     @Override
     public long getPing() {
-        return ((NetworkDebuggable) con).getPing();
+        return con instanceof NetworkDebuggable ? ((NetworkDebuggable) con).getPing() : -1;
     }
 
 }
