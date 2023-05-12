@@ -4,6 +4,6 @@ plugins {
 
 dependencies {
     compileOnly project(':Mod')
-    compileOnly "com.github.Anuken.MindustryJitpack:core:$mindustryVersion"
+    compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
 }
 sourceSets.main.resources.srcDirs = ['res/']
