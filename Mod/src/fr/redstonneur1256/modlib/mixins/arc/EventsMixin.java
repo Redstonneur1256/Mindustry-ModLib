@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(Events.class)
 public class EventsMixin {
 
-    @Redirect(method = "fire(Ljava/lang/Enum;)V", at = @At(value = "INVOKE", target = "Larc/func/Cons;get(Ljava/lang/Object;)V"))
+    @Redirect(method = "fire(Ljava/lang/Enum;)V", at = @At(value = "INVOKE", target = "Larc/func/Cons;get(Ljava/lang/Object;)V"), require = 0)
     private static <T> void redirectFireEnum(Cons<T> instance, T t) {
         try {
             instance.get(t);
@@ -19,7 +19,7 @@ public class EventsMixin {
         }
     }
 
-    @Redirect(method = "fire(Ljava/lang/Class;Ljava/lang/Object;)V", at = @At(value = "INVOKE", target = "Larc/func/Cons;get(Ljava/lang/Object;)V"))
+    @Redirect(method = "fire(Ljava/lang/Class;Ljava/lang/Object;)V", at = @At(value = "INVOKE", target = "Larc/func/Cons;get(Ljava/lang/Object;)V"), require = 0)
     private static <T> void redirectFire(Cons<T> instance, T t) {
         try {
             instance.get(t);

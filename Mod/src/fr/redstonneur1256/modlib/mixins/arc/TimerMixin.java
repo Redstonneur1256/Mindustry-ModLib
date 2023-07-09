@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(Timer.class)
 public class TimerMixin {
 
-    @Redirect(method = "update", at = @At(value = "INVOKE", target = "Larc/Application;post(Ljava/lang/Runnable;)V"))
+    @Redirect(method = "update", at = @At(value = "INVOKE", target = "Larc/Application;post(Ljava/lang/Runnable;)V"), require = 0)
     private void redirectUpdatePost(Application instance, Runnable runnable) {
         instance.post(() -> {
             try {
