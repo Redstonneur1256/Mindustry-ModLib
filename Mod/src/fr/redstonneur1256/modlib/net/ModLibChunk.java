@@ -4,6 +4,7 @@ import arc.Core;
 import arc.Events;
 import arc.func.Boolf;
 import arc.struct.Seq;
+import arc.util.Reflect;
 import fr.redstonneur1256.modlib.MVars;
 import fr.redstonneur1256.modlib.ModLib;
 import fr.redstonneur1256.modlib.events.net.PlayerDataSyncedEvent;
@@ -12,6 +13,7 @@ import fr.redstonneur1256.modlib.net.packet.PacketManager;
 import fr.redstonneur1256.modlib.net.packets.DataAckPacket;
 import mindustry.Vars;
 import mindustry.io.SaveFileReader;
+import mindustry.io.SaveIO;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.io.DataInput;
@@ -42,6 +44,9 @@ public class ModLibChunk implements SaveFileReader.CustomChunk {
         if(!Vars.net.client()) {
             // Even if shouldWrite is false when the server is not opened, the game state can be saved on the server which
             // would cause this section to be written, ignore it when this case happens
+            int length = Reflect.get(SaveFileReader.class, SaveIO.getVersion(), "lastRegionLength");
+
+            stream.skipBytes(length);
             return;
         }
         String version = stream.readUTF();
