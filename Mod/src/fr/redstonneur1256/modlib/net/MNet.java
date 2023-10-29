@@ -23,6 +23,7 @@ import fr.redstonneur1256.modlib.util.dns.SimpleDns;
 import mindustry.Vars;
 import mindustry.io.SaveVersion;
 import mindustry.net.ArcNetProvider;
+import mindustry.net.Net;
 import mindustry.net.NetConnection;
 import net.jpountz.lz4.LZ4Compressor;
 import net.jpountz.lz4.LZ4FastDecompressor;
@@ -68,7 +69,10 @@ public class MNet implements MConnection {
 
         MTypeIO.init();
 
-        ArcNetProvider provider = Reflect.get(Vars.net, "provider");
+        Net.NetProvider provider = Reflect.get(Vars.net, "provider");
+        if(!(provider instanceof ArcNetProvider)) { // must be steam networking
+            provider = Reflect.get(provider, "provider");
+        }
         Server server = Reflect.get(provider, "server");
 
         server.setDiscoveryHandler((address, handler) -> {
