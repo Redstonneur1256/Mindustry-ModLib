@@ -15,7 +15,7 @@ public class TimerMixin {
         instance.post(() -> {
             try {
                 runnable.run();
-            } catch(Throwable throwable) {
+            } catch (Throwable throwable) {
                 Log.err("Failed to dispatch timer task " + runnable, throwable);
             }
         });

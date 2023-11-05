@@ -58,7 +58,7 @@ public class PacketManager {
     }
 
     public static void finalizeRegistration() {
-        if(vanillaPacketCount != 0) {
+        if (vanillaPacketCount != 0) {
             throw new IllegalStateException("Vanilla packet registration is already completed");
         }
 
@@ -82,14 +82,14 @@ public class PacketManager {
         packetIds.ensureCapacity(activePacketCount);
 
         activePackets.addAll(registeredPackets, 0, Math.min(activePacketCount, FRAMEWORK_MESSAGE_ID));
-        if(activePacketCount >= FRAMEWORK_MESSAGE_ID) {
+        if (activePacketCount >= FRAMEWORK_MESSAGE_ID) {
             activePackets.add((ClassEntry<?>) null); // fake framework message
             activePackets.addAll(registeredPackets, FRAMEWORK_MESSAGE_ID, activePacketCount - FRAMEWORK_MESSAGE_ID);
         }
 
-        for(int i = 0; i < activePackets.size; i++) {
+        for (int i = 0; i < activePackets.size; i++) {
             ClassEntry<?> entry = activePackets.get(i);
-            if(entry != null) {
+            if (entry != null) {
                 packetIds.put(entry.type, i);
             }
         }
@@ -97,7 +97,7 @@ public class PacketManager {
 
     public static <T> void registerPacket(Class<T> type, Prov<T> prov) {
         // Might be null during the initial packet registration in the class static initialization
-        if(Vars.net != null && Vars.net.active()) {
+        if (Vars.net != null && Vars.net.active()) {
             throw new IllegalStateException("Cannot register new packets while connected to a server or hosting a game.");
         }
         registeredPackets.add(new ClassEntry<>(type, prov));
@@ -114,7 +114,7 @@ public class PacketManager {
 
     public static void writeAvailablePackets(DataOutput stream) throws IOException {
         stream.writeInt(activePackets.size);
-        for(ClassEntry<?> entry : activePackets) {
+        for (ClassEntry<?> entry : activePackets) {
             stream.writeUTF(entry == null ? "ae" : entry.type.getName());
         }
     }
@@ -131,11 +131,11 @@ public class PacketManager {
         packetIds.clear();
         packetIds.ensureCapacity(packetCount);
 
-        for(int i = 0; i < packetCount; i++) {
+        for (int i = 0; i < packetCount; i++) {
             String name = stream.readUTF();
             ClassEntry<?> entry = registeredPackets.find(e -> e.type.getName().equals(name));
             activePackets.add(entry);
-            if(entry == null) {
+            if (entry == null) {
                 continue;
             }
             packetIds.put(entry.type, i);

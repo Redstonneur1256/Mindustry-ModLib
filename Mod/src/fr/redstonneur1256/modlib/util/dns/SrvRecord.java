@@ -23,7 +23,7 @@ public class SrvRecord extends DnsRecord implements Comparable<SrvRecord> {
 
     @Override
     public int compareTo(SrvRecord o) {
-        if(this.priority != o.priority) {
+        if (this.priority != o.priority) {
             return Integer.compare(this.priority, o.priority);
         } else {
             return Integer.compare(this.weight, o.weight);
@@ -33,8 +33,8 @@ public class SrvRecord extends DnsRecord implements Comparable<SrvRecord> {
     private static String readTarget(ByteBuffer buffer) {
         byte len;
         StringBuilder builder = new StringBuilder();
-        while((len = buffer.get()) != 0) {
-            for(int j = 0; j < len; j++) {
+        while ((len = buffer.get()) != 0) {
+            for (int j = 0; j < len; j++) {
                 builder.append((char) buffer.get());
             }
             builder.append('.');

@@ -43,7 +43,7 @@ public class CustomCallExample {
             @Override
             public CallResult<Boolean> isFoo(Player player, String text) {
                 System.out.println("isFoo() got called from player " + player.name + " with text " + text);
-                if("foo".equals(text)) {
+                if ("foo".equals(text)) {
                     return CallResult.of(true);
                 }
                 // Exceptions can either be thrown directly or by returning CallResult#failed(Throwable)
@@ -54,11 +54,11 @@ public class CustomCallExample {
         // For the client side, every game tick:
         Events.run(EventType.Trigger.update, () -> {
             // Check if the key J has been tapped
-            if(Core.input.keyTap(ExampleKeyBinds.demo) && Vars.net.client()) {
+            if (Core.input.keyTap(ExampleKeyBinds.demo) && Vars.net.client()) {
 
                 // From client side we need to check if the call class is available on the server using MVars.net.isCallAvailable
                 // Trying to use an unavailable call class will lead in a NoSuchMethodError
-                if(!MVars.net.isCallAvailable(CustomCall.class)) {
+                if (!MVars.net.isCallAvailable(CustomCall.class)) {
                     Log.warn("The custom call class is not available on the server, unable to call the method");
                     return;
                 }

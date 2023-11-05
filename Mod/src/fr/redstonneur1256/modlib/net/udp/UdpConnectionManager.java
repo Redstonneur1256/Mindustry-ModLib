@@ -38,7 +38,7 @@ public class UdpConnectionManager {
             this.selector = Selector.open();
             this.thread = Threads.daemon(getClass().getSimpleName(), this::run);
             this.shutdown = false;
-        } catch(IOException exception) {
+        } catch (IOException exception) {
             throw new RuntimeException(exception);
         }
     }
@@ -56,7 +56,7 @@ public class UdpConnectionManager {
         checkShutdown();
         submit(() -> {
             try {
-                if(address.isUnresolved()) {
+                if (address.isUnresolved()) {
                     Log.warn("Attempted to connect to an unresolved address @", address);
                     return;
                 }
@@ -72,7 +72,7 @@ public class UdpConnectionManager {
 
                 onConnect.get(connection);
             } catch (IOException exception) {
-                if(connectionError != null) {
+                if (connectionError != null) {
                     connectionError.get(exception);
                 }
             }
@@ -82,31 +82,31 @@ public class UdpConnectionManager {
     private void run() {
         int emptySelects = 0;
 
-        while(!shutdown) {
+        while (!shutdown) {
             try {
                 long nextTimeout = connections.isEmpty() ? 0 : Math.max(0, connections.peek().getRemainingTime());
                 int selectedCount = selector.select(nextTimeout);
 
-                while(!taskQueue.isEmpty()) {
+                while (!taskQueue.isEmpty()) {
                     UnsafeRunnable runnable = taskQueue.poll();
                     try {
                         runnable.run();
-                    } catch(Throwable throwable) {
+                    } catch (Throwable throwable) {
                         Log.err("Failed to execute task @", runnable);
                         Log.err(throwable);
                     }
                 }
 
-                for(Iterator<SimpleUdpConnection> iterator = connections.iterator(); iterator.hasNext(); ) {
+                for (Iterator<SimpleUdpConnection> iterator = connections.iterator(); iterator.hasNext(); ) {
                     SimpleUdpConnection connection = iterator.next();
-                    if(connection.hasTimeout()) {
+                    if (connection.hasTimeout()) {
                         connection.close(true);
                         iterator.remove();
                     }
                 }
 
-                if(selectedCount == 0) {
-                    if(emptySelects++ == 250) {
+                if (selectedCount == 0) {
+                    if (emptySelects++ == 250) {
                         emptySelects = 0;
                         Threads.sleep(25);
                     }
@@ -114,9 +114,9 @@ public class UdpConnectionManager {
                 }
 
                 Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
-                while(iterator.hasNext()) {
+                while (iterator.hasNext()) {
                     SelectionKey key = iterator.next();
-                    if(key.isReadable()) {
+                    if (key.isReadable()) {
                         DatagramChannel channel = (DatagramChannel) key.channel();
                         SimpleUdpConnection connection = (SimpleUdpConnection) key.attachment();
                         try {
@@ -127,11 +127,11 @@ public class UdpConnectionManager {
                             buffer.flip();
 
                             connection.handle(buffer);
-                        } catch(PortUnreachableException exception) {
-                            if(!connection.isClosed()) {
+                        } catch (PortUnreachableException exception) {
+                            if (!connection.isClosed()) {
                                 connection.close(true);
                             }
-                        } catch(Throwable throwable) {
+                        } catch (Throwable throwable) {
                             Log.err("Error reading from UDP connection", throwable);
                         }
                     }
@@ -139,8 +139,8 @@ public class UdpConnectionManager {
                     iterator.remove();
                 }
 
-            } catch(Throwable throwable) {
-                if(shutdown) {
+            } catch (Throwable throwable) {
+                if (shutdown) {
                     return;
                 }
                 Log.err("Error in selector thread", throwable);
@@ -156,7 +156,7 @@ public class UdpConnectionManager {
     }
 
     private void checkShutdown() {
-        if(shutdown) {
+        if (shutdown) {
             throw new IllegalStateException("This connection manager has been shut down");
         }
     }

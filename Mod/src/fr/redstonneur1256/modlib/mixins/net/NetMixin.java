@@ -44,7 +44,7 @@ public class NetMixin {
     @Inject(method = "<init>", at = @At("RETURN"))
     private void init(Net.NetProvider provider, CallbackInfo ci) {
         // Foo's client moved the pingExecutor initialisation inside the pingHost method causing this to crash the game
-        if(pingExecutor != null) {
+        if (pingExecutor != null) {
             pingExecutor.shutdown();
         }
     }
@@ -58,7 +58,7 @@ public class NetMixin {
 
     @Inject(method = "connect", at = @At("HEAD"))
     public void connect(String ip, int port, Runnable success, CallbackInfo ci) {
-        if(!active) {
+        if (!active) {
             Events.fire(new ServerConnectEvent(ip, port));
         }
     }
@@ -78,7 +78,7 @@ public class NetMixin {
 
     @Inject(method = "handleClientReceived", at = @At("HEAD"), cancellable = true)
     public void handleClientReceived(Packet packet, CallbackInfo ci) {
-        if(packet instanceof Packets.StreamBegin) {
+        if (packet instanceof Packets.StreamBegin) {
             Packets.StreamBegin begin = (Packets.StreamBegin) packet;
 
             currentStream = new Streamable.StreamBuilder(begin);
@@ -90,14 +90,14 @@ public class NetMixin {
             ci.cancel();
         }
 
-        if(packet instanceof MPacket) {
+        if (packet instanceof MPacket) {
             MVars.net.received((MPacket) packet);
         }
     }
 
     @Inject(method = "handleServerReceived", at = @At("HEAD"))
     public void handleServerReceived(NetConnection connection, Packet packet, CallbackInfo ci) {
-        if(packet instanceof MPacket) {
+        if (packet instanceof MPacket) {
             ((MConnection) connection).received((MPacket) packet);
         }
     }

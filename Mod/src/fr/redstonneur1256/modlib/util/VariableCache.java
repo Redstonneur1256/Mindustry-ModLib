@@ -35,14 +35,14 @@ public class VariableCache<K, V> {
         CacheValue newValue = new CacheValue(Instant.now().plus(ttl), key, value);
         newValue.task = SCHEDULER.schedule(() -> remove(key), ttl.toMillis(), TimeUnit.MILLISECONDS);
         CacheValue previous = content.put(key, newValue);
-        if(previous != null) {
+        if (previous != null) {
             previous.task.cancel(false);
         }
     }
 
     public void remove(K key) {
         CacheValue value = content.remove(key);
-        if(value != null) {
+        if (value != null) {
             value.task.cancel(false);
         }
     }

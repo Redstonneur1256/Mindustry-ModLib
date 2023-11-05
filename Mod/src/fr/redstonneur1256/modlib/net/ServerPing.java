@@ -32,7 +32,7 @@ public class ServerPing {
 
     public void ping(String address, int port, Cons<Host> callback, Cons<Exception> failure) {
         pingInternal(address, port, callback, () -> dns.resolveSRV("_mindustry._tcp." + address, records -> {
-            if(records.isEmpty()) {
+            if (records.isEmpty()) {
                 Core.app.post(() -> failure.get(new TimeoutException()));
                 return;
             }
@@ -44,9 +44,9 @@ public class ServerPing {
     private void pingInternal(String address, int port, Cons<Host> callback, Runnable failure) {
         long start = Time.millis();
 
-        if(!IP_PATTERN.matcher(address).matches()) {
+        if (!IP_PATTERN.matcher(address).matches()) {
             dns.resolveA(address, records -> {
-                if(records.isEmpty()) {
+                if (records.isEmpty()) {
                     failure.run();
                     return;
                 }

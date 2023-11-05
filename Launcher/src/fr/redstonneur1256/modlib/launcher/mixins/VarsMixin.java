@@ -29,7 +29,7 @@ public class VarsMixin {
      */
     @Overwrite
     public static void loadLogger() {
-        if(loadedLogger) return;
+        if (loadedLogger) return;
 
         StringMap simpleClassNames = new StringMap();
         Seq<String> hiddenClasses = Seq.with("arc.util.Log");
@@ -41,13 +41,13 @@ public class VarsMixin {
 
         Seq<String> logBuffer = new Seq<>();
         Log.logger = (level, text) -> {
-            synchronized(logBuffer) {
+            synchronized (logBuffer) {
                 StackTraceElement[] elements = Thread.currentThread().getStackTrace();
                 String className;
                 int index = 5;
                 do {
                     className = elements[index++].getClassName();
-                } while(hiddenClasses.contains(className));
+                } while (hiddenClasses.contains(className));
                 String name = className;
                 String caller = Log.level == Log.LogLevel.debug ? name : simpleClassNames.get(name, () -> name.substring(name.lastIndexOf('.') + 1));
 
@@ -58,8 +58,8 @@ public class VarsMixin {
 
                 System.out.printf("[%s] [%s/%s]: %s%n", formatter.format(LocalDateTime.now()), levelName, caller, text);
 
-                if(!headless) {
-                    if(Vars.ui == null || Vars.ui.consolefrag == null) {
+                if (!headless) {
+                    if (Vars.ui == null || Vars.ui.consolefrag == null) {
                         logBuffer.add(console);
                     } else {
                         Vars.ui.consolefrag.addMessage(console);

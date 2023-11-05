@@ -62,12 +62,12 @@ public abstract class ModsMixin {
             long start = Time.millis();
 
             Fi directory = sourceFile.isDirectory() ? sourceFile : (zip = new ZipFi(sourceFile));
-            if(directory.list().length == 1 && directory.list()[0].isDirectory()) {
+            if (directory.list().length == 1 && directory.list()[0].isDirectory()) {
                 directory = directory.list()[0];
             }
             Mods.ModMeta meta = findMeta(directory);
 
-            if(meta == null) {
+            if (meta == null) {
                 Log.warn("Mod @ doesn't have a '[mod/plugin].[h]json' file, skipping.", zip);
                 throw new Mods.ModLoadException("Invalid file: No mod.json found.");
             }
@@ -78,15 +78,15 @@ public abstract class ModsMixin {
 
             Mods.LoadedMod other = mods.find(mod -> mod.name.equals(baseName));
 
-            if(other != null) {
+            if (other != null) {
                 //steam mods can't really be deleted, they need to be unsubscribed
-                if(overwrite && !other.hasSteamID()) {
+                if (overwrite && !other.hasSteamID()) {
                     //close zip file
-                    if(other.root instanceof ZipFi) {
+                    if (other.root instanceof ZipFi) {
                         other.root.delete();
                     }
                     //delete the old mod directory
-                    if(other.file.isDirectory()) {
+                    if (other.file.isDirectory()) {
                         other.file.deleteDirectory();
                     } else {
                         other.file.delete();
@@ -102,8 +102,8 @@ public abstract class ModsMixin {
             Fi mainFile = directory;
 
             // Apparently needed for zip/jar mods, sorcery !
-            for(String child : (mainClass.replace('.', '/') + ".class").split("/")) {
-                if(!child.isEmpty()) {
+            for (String child : (mainClass.replace('.', '/') + ".class").split("/")) {
+                if (!child.isEmpty()) {
                     mainFile = mainFile.child(child);
                 }
             }
@@ -112,7 +112,7 @@ public abstract class ModsMixin {
 
             //make sure the main class exists before loading it; if it doesn't just don't put it there
             //if the mod is explicitly marked as java, try loading it anyway
-            if((mainFile.exists() || meta.java) &&
+            if ((mainFile.exists() || meta.java) &&
                     !skipModLoading() &&
                     Core.settings.getBool("mod-" + baseName + "-enabled", true) &&
                     Version.isAtLeast(meta.minGameVersion) &&
@@ -124,7 +124,7 @@ public abstract class ModsMixin {
 
                 try {
                     main = Class.forName(mainClass, true, loader);
-                } catch(ClassNotFoundException exception) {
+                } catch (ClassNotFoundException exception) {
                     // Mod might be imported right now so is not present
                     loader.addURL(sourceFile.file().toURI().toURL());
                     main = Class.forName(mainClass, true, loader);
@@ -132,7 +132,7 @@ public abstract class ModsMixin {
 
 
                 //detect mods that incorrectly package mindustry in the jar
-                if((main.getSuperclass().getName().equals("mindustry.mod.Plugin") || main.getSuperclass().getName().equals("mindustry.mod.Mod")) &&
+                if ((main.getSuperclass().getName().equals("mindustry.mod.Plugin") || main.getSuperclass().getName().equals("mindustry.mod.Mod")) &&
                         main.getSuperclass().getClassLoader() != Mod.class.getClassLoader()) {
                     throw new Mods.ModLoadException(
                             "This mod/plugin has loaded Mindustry dependencies from its own class loader. " +
@@ -148,30 +148,30 @@ public abstract class ModsMixin {
             }
 
             //all plugins are hidden implicitly
-            if(mainMod instanceof Plugin) {
+            if (mainMod instanceof Plugin) {
                 meta.hidden = true;
             }
 
             //disallow putting a description after the version
-            if(meta.version != null) {
+            if (meta.version != null) {
                 int line = meta.version.indexOf('\n');
-                if(line != -1) {
+                if (line != -1) {
                     meta.version = meta.version.substring(0, line);
                 }
             }
 
             //skip mod loading if it failed
-            if(skipModLoading()) {
+            if (skipModLoading()) {
                 Core.settings.put("mod-" + baseName + "-enabled", false);
             }
 
-            if(!headless && Core.settings.getBool("mod-" + baseName + "-enabled", true)) {
+            if (!headless && Core.settings.getBool("mod-" + baseName + "-enabled", true)) {
                 Log.info("Loaded mod '@' in @ms", meta.name, Time.timeSinceMillis(start));
             }
 
             return new Mods.LoadedMod(sourceFile, directory, mainMod, loader, meta);
-        } catch(Throwable throwable) {
-            if(zip != null) {
+        } catch (Throwable throwable) {
+            if (zip != null) {
                 zip.delete();
             }
             throw throwable;
@@ -182,12 +182,12 @@ public abstract class ModsMixin {
     public void removeMod(Mods.LoadedMod mod, CallbackInfo ci) {
         ci.cancel();
 
-        if(mod.loader != null) {
+        if (mod.loader != null) {
             Vars.ui.showErrorMessage("@ui.mods.mod.deleteLoaded");
             return;
         }
 
-        if(mod.root instanceof ZipFi) {
+        if (mod.root instanceof ZipFi) {
             mod.root.delete(); // this actually closes the file handle
         }
 

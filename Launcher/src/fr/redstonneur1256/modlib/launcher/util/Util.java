@@ -10,7 +10,7 @@ public class Util {
         ByteArrayOutputStream output = new ByteArrayOutputStream(stream.available());
         byte[] buffer = new byte[8192];
         int read;
-        while((read = stream.read(buffer)) != -1) {
+        while ((read = stream.read(buffer)) != -1) {
             output.write(buffer, 0, read);
         }
         return output.toByteArray();

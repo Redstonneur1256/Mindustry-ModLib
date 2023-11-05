@@ -2,7 +2,9 @@ package fr.redstonneur1256.modlib.launcher.file;
 
 import org.jetbrains.annotations.ApiStatus;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 
 @ApiStatus.Internal

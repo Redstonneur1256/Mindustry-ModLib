@@ -25,7 +25,7 @@ public class MixinClassLoader extends URLClassLoader {
             transformer = constructor.newInstance();
             method = transformerClass.getDeclaredMethod("transformClassBytes", String.class, String.class, byte[].class);
             method.setAccessible(true);
-        } catch(Throwable throwable) {
+        } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
     }
@@ -60,44 +60,44 @@ public class MixinClassLoader extends URLClassLoader {
             URLConnection connection = url == null ? null : url.openConnection();
 
             CodeSigner[] signers = null;
-            if(lastIndex != -1 && connection instanceof JarURLConnection) {
+            if (lastIndex != -1 && connection instanceof JarURLConnection) {
                 JarURLConnection jarConnection = (JarURLConnection) connection;
                 JarFile file = jarConnection.getJarFile();
 
                 // The URL provided by getResource points inside the jar causing foo's client to crash
                 url = new URL("file:/" + URLEncoder.encode(file.getName(), "UTF-8"));
 
-                if(file.getManifest() != null) {
+                if (file.getManifest() != null) {
                     JarEntry entry = file.getJarEntry(classFileName);
-                    if(entry != null) {
+                    if (entry != null) {
                         signers = entry.getCodeSigners();
                     }
 
-                    if(getPackage(packageName) == null) {
+                    if (getPackage(packageName) == null) {
                         definePackage(packageName, file.getManifest(), url);
                     }
                 }
-            } else if(getPackage(packageName) == null) {
+            } else if (getPackage(packageName) == null) {
                 definePackage(packageName, null, null, null, null, null, null, null);
             }
             byte[] rawClass = connection == null ? null : Util.readFully(connection.getInputStream());
             byte[] transformed = (byte[]) method.invoke(transformer, name, name, rawClass);
 
-            if(transformed == null) {
+            if (transformed == null) {
                 throw new ClassNotFoundException(name);
             }
 
             CodeSource codeSource = url == null ? null : new CodeSource(url, signers);
 
             Class<?> clazz = defineClass(name, transformed, 0, transformed.length, codeSource);
-            if(clazz == null) {
+            if (clazz == null) {
                 throw new ClassNotFoundException(name);
             }
             return clazz;
-        } catch(ClassNotFoundException exception) {
+        } catch (ClassNotFoundException exception) {
             throw exception;
-        } catch(Throwable throwable) {
-            if(throwable instanceof RuntimeException) {
+        } catch (Throwable throwable) {
+            if (throwable instanceof RuntimeException) {
                 throw (RuntimeException) throwable;
             }
             throw new RuntimeException(throwable);

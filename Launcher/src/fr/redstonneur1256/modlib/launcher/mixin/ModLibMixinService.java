@@ -99,7 +99,7 @@ public class ModLibMixinService extends MixinServiceAbstract {
     @Override
     protected ILogger createLogger(String name) {
         LoggerAdapterConsole logger = new LoggerAdapterConsole("ModLib-" + name);
-        if(ModLibLauncher.launcher.debug()) {
+        if (ModLibLauncher.launcher.debug()) {
             logger.setDebugStream(System.out);
         }
         return logger;

@@ -23,8 +23,8 @@ public class Task<T> {
 
     private <O> Task(Task<O> oldTask, Func<O, T> mapper) {
         this();
-        if(oldTask.isComplete()) {
-            if(oldTask.exception != null) {
+        if (oldTask.isComplete()) {
+            if (oldTask.exception != null) {
                 fail(oldTask.exception);
             } else {
                 complete(mapper.get(oldTask.item));
@@ -48,20 +48,20 @@ public class Task<T> {
     }
 
     public boolean isCompleted() {
-        synchronized(lock) {
+        synchronized (lock) {
             return have;
         }
     }
 
     public boolean isFailed() {
-        synchronized(lock) {
+        synchronized (lock) {
             return have && exception != null;
         }
     }
 
     public void complete(T item) {
-        synchronized(lock) {
-            if(have) {
+        synchronized (lock) {
+            if (have) {
                 throw new IllegalStateException("The Task have already been completed");
             }
             this.item = item;
@@ -70,8 +70,8 @@ public class Task<T> {
     }
 
     public void fail(Throwable exception) {
-        synchronized(lock) {
-            if(have) {
+        synchronized (lock) {
+            if (have) {
                 throw new IllegalStateException("The Task have already been completed");
             }
             this.exception = exception;
@@ -96,7 +96,7 @@ public class Task<T> {
     }
 
     public boolean isComplete() {
-        synchronized(lock) {
+        synchronized (lock) {
             return have;
         }
     }
@@ -106,11 +106,11 @@ public class Task<T> {
     }
 
     public void waitComplete(long timeout) {
-        synchronized(lock) {
-            if(!have) {
+        synchronized (lock) {
+            if (!have) {
                 try {
                     lock.wait(timeout);
-                } catch(InterruptedException ignored) {
+                } catch (InterruptedException ignored) {
                 }
             }
         }
@@ -121,18 +121,18 @@ public class Task<T> {
     }
 
     public T get(long timeout) {
-        synchronized(lock) {
-            if(!have) {
+        synchronized (lock) {
+            if (!have) {
                 try {
                     lock.wait(timeout);
-                } catch(InterruptedException ignored) {
+                } catch (InterruptedException ignored) {
                 }
             }
-            if(!have) {
+            if (!have) {
                 return null;
             }
 
-            if(exception != null) {
+            if (exception != null) {
                 throw new RuntimeException(exception);
             }
             return item;
@@ -144,8 +144,8 @@ public class Task<T> {
     }
 
     public T getNow(Prov<T> orElse) {
-        synchronized(lock) {
-            if(exception != null) {
+        synchronized (lock) {
+            if (exception != null) {
                 throw new RuntimeException(exception);
             }
             return have ? item : orElse.get();
@@ -157,11 +157,11 @@ public class Task<T> {
     }
 
     public Throwable getException(long timeout) {
-        synchronized(lock) {
-            if(!have) {
+        synchronized (lock) {
+            if (!have) {
                 try {
                     lock.wait(timeout);
-                } catch(InterruptedException ignored) {
+                } catch (InterruptedException ignored) {
                 }
             }
             return exception;
@@ -173,9 +173,9 @@ public class Task<T> {
      * Note that if the task has already been completed the listener will be called directly
      */
     public void onComplete(Cons<T> action) {
-        synchronized(lock) {
-            if(have) {
-                if(exception == null) {
+        synchronized (lock) {
+            if (have) {
+                if (exception == null) {
                     action.get(item);
                 }
             } else {
@@ -185,9 +185,9 @@ public class Task<T> {
     }
 
     public void onFail(Cons<Throwable> action) {
-        synchronized(lock) {
-            if(have) {
-                if(exception != null) {
+        synchronized (lock) {
+            if (have) {
+                if (exception != null) {
                     action.get(exception);
                 }
             } else {
@@ -204,12 +204,12 @@ public class Task<T> {
         have = true;
         lock.notifyAll();
 
-        if(exception == null) {
-            for(Cons<T> listener : listeners) {
+        if (exception == null) {
+            for (Cons<T> listener : listeners) {
                 listener.get(item);
             }
         } else {
-            for(Cons<Throwable> failListener : failListeners) {
+            for (Cons<Throwable> failListener : failListeners) {
                 failListener.get(exception);
             }
         }

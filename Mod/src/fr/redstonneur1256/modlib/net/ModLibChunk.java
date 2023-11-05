@@ -41,7 +41,7 @@ public class ModLibChunk implements SaveFileReader.CustomChunk {
 
     @Override
     public void read(DataInput stream) throws IOException {
-        if(!Vars.net.client()) {
+        if (!Vars.net.client()) {
             // Even if shouldWrite is false when the server is not opened, the game state can be saved on the server which
             // would cause this section to be written, ignore it when this case happens
             int length = Reflect.get(SaveFileReader.class, SaveIO.getVersion(), "lastRegionLength");
@@ -51,7 +51,7 @@ public class ModLibChunk implements SaveFileReader.CustomChunk {
         }
         String version = stream.readUTF();
 
-        if(!version.equals(ModLib.getVersion()) && Core.settings.getBool("modlib.versionWarning", true)) {
+        if (!version.equals(ModLib.getVersion()) && Core.settings.getBool("modlib.versionWarning", true)) {
             Vars.ui.showErrorMessage(Core.bundle.format("modlib.version.mismatch", ModLib.getVersion(), version));
         }
 
@@ -71,8 +71,8 @@ public class ModLibChunk implements SaveFileReader.CustomChunk {
     private static <T> BitSet createBitSet(Seq<T> seq, Boolf<T> predicate) {
         BitSet set = new BitSet();
 
-        for(int i = 0; i < seq.size; i++) {
-            if(predicate.get(seq.get(i))) {
+        for (int i = 0; i < seq.size; i++) {
+            if (predicate.get(seq.get(i))) {
                 set.set(i);
             }
         }

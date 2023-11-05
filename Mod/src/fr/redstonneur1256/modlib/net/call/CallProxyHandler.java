@@ -22,7 +22,7 @@ public class CallProxyHandler implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) {
-        switch(method.getName()) {
+        switch (method.getName()) {
             case "hashCode":
                 return 0;
             case "equals":
@@ -31,21 +31,21 @@ public class CallProxyHandler implements InvocationHandler {
                 return "RemoteCall" + type.getName();
             default:
                 int id = manager.getMethodId(method);
-                if(id == -1) {
+                if (id == -1) {
                     throw new NoSuchMethodError("Method " + method.getName() + " is not available.");
                 }
 
                 CallMethod callMethod = manager.getActiveMethods().get(id);
-                if(!callMethod.getSide().available()) {
+                if (!callMethod.getSide().available()) {
                     throw new IllegalStateException("Method " + method.getName() + " is only available to be called on side " + callMethod.getSide());
                 }
 
                 CallResult<?> result = new CallResult<>();
 
-                if(Vars.net.server()) {
+                if (Vars.net.server()) {
                     // The player on which to call this method
                     Player player = args[0] instanceof Player ? (Player) args[0] : null;
-                    if(player == null) {
+                    if (player == null) {
                         throw new NoSuchMethodError("In order to call a remote method from the server, the first argument of the method must be the player on which to call the method");
                     }
                     ((MConnection) player.con).sendPacket(new CustomInvokePacket(id, args), CustomInvokeResultPacket.class, result::complete);

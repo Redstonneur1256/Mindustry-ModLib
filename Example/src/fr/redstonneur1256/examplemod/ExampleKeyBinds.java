@@ -12,12 +12,12 @@ public enum ExampleKeyBinds implements KeyBinds.KeyBind {
     private final KeyBinds.KeybindValue defaultValue;
     private final String category;
 
-    ExampleKeyBinds(KeyBinds.KeybindValue defaultValue, String category){
+    ExampleKeyBinds(KeyBinds.KeybindValue defaultValue, String category) {
         this.defaultValue = defaultValue;
         this.category = category;
     }
 
-    ExampleKeyBinds(KeyBinds.KeybindValue defaultValue){
+    ExampleKeyBinds(KeyBinds.KeybindValue defaultValue) {
         this(defaultValue, null);
     }
 

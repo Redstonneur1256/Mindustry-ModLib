@@ -33,18 +33,18 @@ public abstract class ArcPacketSerializerMixin {
      */
     @Overwrite
     public void write(ByteBuffer buffer, Object object) {
-        if(object instanceof ByteBuffer) {
+        if (object instanceof ByteBuffer) {
             buffer.put((ByteBuffer) object);
             return;
         }
-        if(object instanceof FrameworkMessage) {
+        if (object instanceof FrameworkMessage) {
             buffer.put((byte) PacketManager.FRAMEWORK_MESSAGE_ID);
             writeFramework(buffer, (FrameworkMessage) object);
             return;
         }
-        if(object instanceof Packet) {
+        if (object instanceof Packet) {
             int id = PacketManager.getId(object.getClass());
-            if(id == -1) {
+            if (id == -1) {
                 // Client side only, on server all packets are always available
                 // A mod tried to send a packet that is not supported by the current server we are on
                 // Vanilla server will close the connection upon reading an unknown packet and at this point we have no
@@ -69,7 +69,7 @@ public abstract class ArcPacketSerializerMixin {
             //write length, uncompressed
             buffer.putShort(length);
 
-            if(length < 36 || object instanceof Packets.StreamChunk) {
+            if (length < 36 || object instanceof Packets.StreamChunk) {
                 buffer.put((byte) 0);
                 buffer.put(packetBuffer.array(), 0, length);
             } else {
@@ -93,7 +93,7 @@ public abstract class ArcPacketSerializerMixin {
     @Overwrite
     public Object read(ByteBuffer buffer) {
         int id = buffer.get() & 0xFF;
-        if(id == PacketManager.FRAMEWORK_MESSAGE_ID) {
+        if (id == PacketManager.FRAMEWORK_MESSAGE_ID) {
             return readFramework(buffer);
         }
 
@@ -105,7 +105,7 @@ public abstract class ArcPacketSerializerMixin {
         byte compression = buffer.get();
         int finalLength = length;
 
-        if(compression == 0) {
+        if (compression == 0) {
             packetBuffer.position(0);
             packetBuffer.put(buffer.array(), buffer.position(), length);
         } else {
@@ -114,7 +114,7 @@ public abstract class ArcPacketSerializerMixin {
         buffer.position(buffer.position() + finalLength); // simulate packet has been read
 
         ClassEntry<Packet> entry = PacketManager.getEntry(id);
-        if(entry == null) {
+        if (entry == null) {
             Log.warn("Received unknown packet with id @", id);
             return null;
         }

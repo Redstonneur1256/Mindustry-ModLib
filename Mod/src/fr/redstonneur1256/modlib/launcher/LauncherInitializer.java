@@ -33,7 +33,7 @@ public class LauncherInitializer {
     }
 
     public static void initialize() {
-        if(isInitialized()) {
+        if (isInitialized()) {
             return;
         }
 
@@ -45,7 +45,7 @@ public class LauncherInitializer {
         try {
             Log.info("[ModLib] Extracting ModLib launcher...");
             InputStream stream = LauncherInitializer.class.getResourceAsStream("/ModLib-launcher.jar");
-            if(stream == null) {
+            if (stream == null) {
                 Log.warn("[ModLib] Missing internal launcher file");
                 throw new RuntimeException("Missing internal launcher file");
             }
@@ -62,16 +62,16 @@ public class LauncherInitializer {
             List<String> command = new ArrayList<>(8);
             command.add(System.getProperty("java.home") + File.separator + "bin" + File.separator + "java" + (OS.isWindows ? ".exe" : ""));
 
-            if(isBundledJVM()) {
+            if (isBundledJVM()) {
                 command.add("-Dhttps.protocols=TLSv1.2,TLSv1.1,TLSv1");
             }
 
-            if(OS.isMac) {
+            if (OS.isMac) {
                 command.add("-XstartOnFirstThread");
             }
             try {
                 command.addAll(ManagementFactory.getRuntimeMXBean().getInputArguments());
-            } catch(Throwable exception) {
+            } catch (Throwable exception) {
                 Log.err("Unable to add current java arguments", exception);
             }
 
@@ -83,19 +83,19 @@ public class LauncherInitializer {
             command.add(String.valueOf(Vars.headless));
             command.add(Version.combined());
 
-            if(Core.settings.getBool("modlib.antialiasing", false)) {
+            if (Core.settings.getBool("modlib.antialiasing", false)) {
                 command.add("-antialias");
             }
-            if(Core.settings.getBool("modlib.debug", false)) {
+            if (Core.settings.getBool("modlib.debug", false)) {
                 command.add("-debug");
             }
 
-            if(Vars.headless) {
+            if (Vars.headless) {
                 try {
                     Class<?> serverLauncher = Class.forName("mindustry.server.ServerLauncher");
                     String[] args = Reflect.get(serverLauncher, "args");
                     command.addAll(Arrays.asList(args));
-                } catch(ClassNotFoundException | RuntimeException exception) {
+                } catch (ClassNotFoundException | RuntimeException exception) {
                     Log.err("Could not get servers arguments", exception);
                 }
             }
@@ -106,12 +106,12 @@ public class LauncherInitializer {
 
             boolean inherit = Vars.headless || Boolean.getBoolean("modlib.inherit");
 
-            if(inherit) {
+            if (inherit) {
                 builder.inheritIO();
             }
 
             Process process = builder.start();
-            if(inherit) {
+            if (inherit) {
                 process.waitFor();
 
                 // load the settings that were saved from the new launched process because calling Core.app.exit() will
@@ -119,15 +119,15 @@ public class LauncherInitializer {
                 Core.settings.load();
             }
 
-            if(Vars.headless) {
+            if (Vars.headless) {
                 System.exit(0);
             }
             Core.app.exit();
-        } catch(Throwable throwable) {
+        } catch (Throwable throwable) {
             // Startup failed, revert changes that could cause problems
             Core.settings.setAutosave(true);
 
-            if(Vars.headless) {
+            if (Vars.headless) {
                 Log.err("ModLib failed to initialize", throwable);
                 return;
             }
@@ -139,7 +139,7 @@ public class LauncherInitializer {
         try {
             Class.forName(name);
             return true;
-        } catch(ClassNotFoundException ignored) {
+        } catch (ClassNotFoundException ignored) {
             return false;
         }
     }

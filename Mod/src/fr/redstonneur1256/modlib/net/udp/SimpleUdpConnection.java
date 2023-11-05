@@ -41,7 +41,7 @@ public class SimpleUdpConnection {
 
         try {
             channel.send(buffer, address);
-        } catch(IOException exception) {
+        } catch (IOException exception) {
             throw new RuntimeException(exception);
         }
     }
@@ -59,7 +59,7 @@ public class SimpleUdpConnection {
             Streams.close(channel);
             manager.removeConnection(this);
 
-            if(timeout && timeoutHandler != null) {
+            if (timeout && timeoutHandler != null) {
                 timeoutHandler.run();
             }
         });
@@ -69,13 +69,13 @@ public class SimpleUdpConnection {
         lastPacketTime = System.currentTimeMillis();
         manager.reorder(this);
 
-        if(packetHandler != null) {
+        if (packetHandler != null) {
             packetHandler.get(buffer);
         }
     }
 
     private void checkClosed() {
-        if(closed) {
+        if (closed) {
             throw new IllegalStateException("This connection is closed");
         }
     }

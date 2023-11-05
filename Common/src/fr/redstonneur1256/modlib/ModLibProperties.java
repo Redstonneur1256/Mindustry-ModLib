@@ -17,7 +17,7 @@ public class ModLibProperties {
             VERSION = properties.getProperty("version");
             BUILD = properties.getProperty("build");
             BUILT = Instant.parse(properties.getProperty("built"));
-        } catch(Throwable throwable) {
+        } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
     }

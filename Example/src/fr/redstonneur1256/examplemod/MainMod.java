@@ -31,7 +31,7 @@ public class MainMod extends Mod {
     public void registerServerCommands(CommandHandler handler) {
         handler.register("ping", "Display the ping of everyone on the server", args -> {
             Log.info("Ping of players:");
-            for(Player player : Groups.player) {
+            for (Player player : Groups.player) {
                 long ping = ((NetworkDebuggable) player).getPing();
                 Log.info("- @: @ ms", player.name, ping);
             }

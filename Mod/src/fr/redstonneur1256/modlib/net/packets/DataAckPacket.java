@@ -30,7 +30,7 @@ public class DataAckPacket extends Packet {
 
         int callClassCount = reads.i();
         availableCallClasses = new Seq<>(callClassCount);
-        for(int i = 0; i < callClassCount; i++) {
+        for (int i = 0; i < callClassCount; i++) {
             availableCallClasses.add(reads.str());
         }
     }

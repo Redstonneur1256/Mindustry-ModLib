@@ -34,10 +34,10 @@ public class CallResult<T> extends Task<T> {
         onComplete(listener);
         onFail(failure);
 
-        if(timeout != null) {
+        if (timeout != null) {
             MVars.net.getScheduler().schedule(() -> {
-                if(!isCompleted()) {
-                    synchronized(lock) {
+                if (!isCompleted()) {
+                    synchronized (lock) {
                         listeners.remove(listener);
                         failListeners.remove(failure);
                         timeout.run();
@@ -51,7 +51,7 @@ public class CallResult<T> extends Task<T> {
      * This is called internally to complete the method execution
      */
     public void complete(CustomInvokeResultPacket packet) {
-        if(packet.throwable != null) {
+        if (packet.throwable != null) {
             fail(packet.throwable);
         } else {
             complete((T) packet.result);

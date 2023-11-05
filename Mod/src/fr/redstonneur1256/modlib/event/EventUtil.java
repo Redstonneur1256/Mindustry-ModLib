@@ -32,7 +32,7 @@ public class EventUtil {
 
     public static void unregister(RegisteredListener listener) {
         Seq<Cons<?>> listeners = events.get(listener.getType());
-        if(listeners != null) {
+        if (listeners != null) {
             listeners.remove(listener.getAction());
         }
     }

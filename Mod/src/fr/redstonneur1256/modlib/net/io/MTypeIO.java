@@ -87,10 +87,10 @@ public class MTypeIO {
     }
 
     public static <T> void registerSerializer(Class<T> type, Serializer<T> serializer) {
-        if(Vars.net.active()) {
+        if (Vars.net.active()) {
             throw new IllegalStateException("Cannot register new type serializers while connected to a server or hosting a server");
         }
-        if(registeredSerializers.get(type) != null) {
+        if (registeredSerializers.get(type) != null) {
             throw new IllegalStateException("A serializer is already registered for the type " + type.getName());
         }
         registeredSerializers.put(type, new ObjectSerializer<>(type, serializer));
@@ -107,7 +107,7 @@ public class MTypeIO {
         // null is hardcoded with ID 0
         activeSerializers.add((ObjectSerializer<?>) null);
 
-        for(ObjectSerializer<?> serializer : registeredSerializers.values()) {
+        for (ObjectSerializer<?> serializer : registeredSerializers.values()) {
             serializer.setId(activeSerializers.size);
             activeSerializers.add(serializer);
         }
@@ -117,8 +117,8 @@ public class MTypeIO {
         // Skip the first element because it's the null serializer
         stream.writeInt(activeSerializers.size - 1);
 
-        for(ObjectSerializer<?> serializer : activeSerializers) {
-            if(serializer == null) {
+        for (ObjectSerializer<?> serializer : activeSerializers) {
+            if (serializer == null) {
                 continue;
             }
             stream.writeInt(serializer.getId());
@@ -135,27 +135,27 @@ public class MTypeIO {
         // null is hardcoded with ID 0
         activeSerializers.add((ObjectSerializer<?>) null);
 
-        for(ObjectSerializer<?> serializer : registeredSerializers.values()) {
+        for (ObjectSerializer<?> serializer : registeredSerializers.values()) {
             serializer.setId(-1);
         }
 
-        for(int i = 0; i < serializerCount; i++) {
+        for (int i = 0; i < serializerCount; i++) {
             int id = stream.readInt();
             String name = stream.readUTF();
             try {
                 Class<?> type = getType(name);
                 ObjectSerializer<?> serializer = registeredSerializers.get(type);
 
-                while(activeSerializers.size <= id) {
+                while (activeSerializers.size <= id) {
                     activeSerializers.add((ObjectSerializer<?>) null);
                 }
                 activeSerializers.set(id, serializer);
-                if(serializer == null) {
+                if (serializer == null) {
                     Log.warn("No serializer registered on client for type @", name);
                     continue;
                 }
                 serializer.setId(id);
-            } catch(ClassNotFoundException exception) {
+            } catch (ClassNotFoundException exception) {
                 Log.warn("Could not resolve TypeIO serializer class @", name);
             }
         }
@@ -163,12 +163,12 @@ public class MTypeIO {
 
     public static Object readObject(Reads reads) {
         int id = NetworkUtil.readExtendedByte(reads::b);
-        if(id == 0) {
+        if (id == 0) {
             return null;
         }
 
         ObjectSerializer<?> serializer = activeSerializers.get(id);
-        if(serializer == null) {
+        if (serializer == null) {
             throw new SerializationException("Trying to read object with type " + id + " but not serializer is associated with this id");
         }
         return serializer.read(reads);
@@ -176,7 +176,7 @@ public class MTypeIO {
 
     @SuppressWarnings("unchecked")
     public static void writeObject(Writes writes, Object object) {
-        if(object == null) {
+        if (object == null) {
             NetworkUtil.writeExtendedByte(writes::b, 0);
             return;
         }
@@ -185,9 +185,9 @@ public class MTypeIO {
         ObjectSerializer<?> serializer;
         do {
             serializer = registeredSerializers.get(type);
-        } while(serializer == null && (type = type.getSuperclass()) != null);
+        } while (serializer == null && (type = type.getSuperclass()) != null);
 
-        if(serializer == null || serializer.getId() == -1) {
+        if (serializer == null || serializer.getId() == -1) {
             throw new SerializationException("Could not find a type serializer for the object " + object + " (" + object.getClass().getName() + ")");
         }
 
@@ -198,7 +198,7 @@ public class MTypeIO {
     public static IntSeq readIntSeq(Reads read) {
         int count = read.i();
         IntSeq seq = new IntSeq(count);
-        for(int i = 0; i < count; i++) {
+        for (int i = 0; i < count; i++) {
             seq.add(read.i());
         }
         return seq;
@@ -206,7 +206,7 @@ public class MTypeIO {
 
     public static void writeIntSeq(Writes write, IntSeq seq) {
         write.s((short) seq.size);
-        for(int i = 0; i < seq.size; i++) {
+        for (int i = 0; i < seq.size; i++) {
             write.i(seq.get(i));
         }
     }
@@ -214,7 +214,7 @@ public class MTypeIO {
     public static <T> T[] readArray(Reads reads, IntFunction<T[]> constructor, Prov<T> reader) {
         int count = reads.i();
         T[] array = constructor.apply(count);
-        for(int i = 0; i < count; i++) {
+        for (int i = 0; i < count; i++) {
             array[i] = reader.get();
         }
         return array;
@@ -222,14 +222,14 @@ public class MTypeIO {
 
     public static <T> void writeArray(Writes writes, T[] array, Cons<T> writer) {
         writes.i(array.length);
-        for(T t : array) {
+        for (T t : array) {
             writer.get(t);
         }
     }
 
     public static boolean[] readBooleanArray(Reads reads) {
         boolean[] booleans = new boolean[reads.i()];
-        for(int i = 0; i < booleans.length; i++) {
+        for (int i = 0; i < booleans.length; i++) {
             booleans[i] = reads.bool();
         }
         return booleans;
@@ -237,14 +237,14 @@ public class MTypeIO {
 
     public static void writeBooleanArray(Writes writes, boolean[] booleans) {
         writes.i(booleans.length);
-        for(boolean bool : booleans) {
+        for (boolean bool : booleans) {
             writes.bool(bool);
         }
     }
 
     public static int[] readIntArray(Reads reads) {
         int[] ints = new int[reads.i()];
-        for(int i = 0; i < ints.length; i++) {
+        for (int i = 0; i < ints.length; i++) {
             ints[i] = reads.i();
         }
         return ints;
@@ -252,14 +252,14 @@ public class MTypeIO {
 
     public static void writeIntArray(Writes writes, int[] ints) {
         writes.i(ints.length);
-        for(int i : ints) {
+        for (int i : ints) {
             writes.i(i);
         }
     }
 
     public static long[] readLongArray(Reads reads) {
         long[] longs = new long[reads.i()];
-        for(int i = 0; i < longs.length; i++) {
+        for (int i = 0; i < longs.length; i++) {
             longs[i] = reads.l();
         }
         return longs;
@@ -267,14 +267,14 @@ public class MTypeIO {
 
     public static void writeLongArray(Writes writes, long[] longs) {
         writes.i(longs.length);
-        for(long l : longs) {
+        for (long l : longs) {
             writes.l(l);
         }
     }
 
     public static float[] readFloatArray(Reads reads) {
         float[] floats = new float[reads.i()];
-        for(int i = 0; i < floats.length; i++) {
+        for (int i = 0; i < floats.length; i++) {
             floats[i] = reads.f();
         }
         return floats;
@@ -282,14 +282,14 @@ public class MTypeIO {
 
     public static void writeFloatArray(Writes writes, float[] floats) {
         writes.i(floats.length);
-        for(float f : floats) {
+        for (float f : floats) {
             writes.f(f);
         }
     }
 
     public static double[] readDoubleArray(Reads reads) {
         double[] doubles = new double[reads.i()];
-        for(int i = 0; i < doubles.length; i++) {
+        for (int i = 0; i < doubles.length; i++) {
             doubles[i] = reads.d();
         }
         return doubles;
@@ -297,7 +297,7 @@ public class MTypeIO {
 
     public static void writeDoubleArray(Writes writes, double[] doubles) {
         writes.i(doubles.length);
-        for(double d : doubles) {
+        for (double d : doubles) {
             writes.d(d);
         }
     }
@@ -312,7 +312,7 @@ public class MTypeIO {
     }
 
     public static Throwable readException(Reads reads) {
-        if(reads.b() == 0) {
+        if (reads.b() == 0) {
             return null;
         }
         String exceptionClass = reads.str();
@@ -323,13 +323,13 @@ public class MTypeIO {
             Class<?> clazz = getType(exceptionClass);
 
             throwable = (Throwable) clazz.getDeclaredConstructor(String.class).newInstance(message);
-        } catch(Exception exception) {
+        } catch (Exception exception) {
             Log.warn("Failed to construct throwable for class @", exceptionClass);
             throwable = new Throwable(message);
         }
 
         StackTraceElement[] elements = new StackTraceElement[reads.i()];
-        for(int i = 0; i < elements.length; i++) {
+        for (int i = 0; i < elements.length; i++) {
             String declaringGlass = reads.str();
             String methodName = reads.str();
             String fileName = reads.str();
@@ -339,9 +339,9 @@ public class MTypeIO {
         throwable.setStackTrace(elements);
 
         int suppressedCount = reads.i();
-        for(int i = 0; i < suppressedCount; i++) {
+        for (int i = 0; i < suppressedCount; i++) {
             Throwable suppressed = readException(reads);
-            if(suppressed != null) { // Should not happen
+            if (suppressed != null) { // Should not happen
                 throwable.addSuppressed(suppressed);
             }
         }
@@ -355,7 +355,7 @@ public class MTypeIO {
      * be reconstructed with the default class Throwable
      */
     public static void writeException(Writes writes, Throwable throwable) {
-        if(throwable == null) {
+        if (throwable == null) {
             writes.b(0);
             return;
         }
@@ -366,7 +366,7 @@ public class MTypeIO {
 
         StackTraceElement[] elements = throwable.getStackTrace();
         writes.i(elements.length);
-        for(StackTraceElement element : elements) {
+        for (StackTraceElement element : elements) {
             writes.str(element.getClassName());
             writes.str(element.getMethodName());
             writes.str(element.getFileName() == null ? "" : element.getFileName());
@@ -375,7 +375,7 @@ public class MTypeIO {
 
         Throwable[] suppressedList = throwable.getSuppressed();
         writes.i(suppressedList.length);
-        for(Throwable suppressed : suppressedList) {
+        for (Throwable suppressed : suppressedList) {
             writeException(writes, suppressed);
         }
     }
@@ -391,7 +391,7 @@ public class MTypeIO {
     }
 
     public static Class<?> getType(String name) throws ClassNotFoundException {
-        switch(name) {
+        switch (name) {
             case "void":
                 return void.class;
             case "boolean":

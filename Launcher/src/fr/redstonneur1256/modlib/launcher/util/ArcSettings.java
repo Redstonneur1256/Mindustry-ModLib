@@ -31,7 +31,7 @@ public class ArcSettings {
     }
 
     public void load(Path path) throws IOException {
-        try(InputStream stream = Files.newInputStream(path)) {
+        try (InputStream stream = Files.newInputStream(path)) {
             load(stream);
         }
     }
@@ -40,11 +40,11 @@ public class ArcSettings {
         DataInput stream = new DataInputStream(new BufferedInputStream(input, 8192));
         int count = stream.readInt();
 
-        for(int i = 0; i < count; i++) {
+        for (int i = 0; i < count; i++) {
             String key = stream.readUTF();
             byte type = stream.readByte();
 
-            switch(type) {
+            switch (type) {
                 case TYPE_BOOLEAN:
                     values.put(key, stream.readBoolean());
                     break;
@@ -77,7 +77,7 @@ public class ArcSettings {
     }
 
     public void write(Path path) throws IOException {
-        try(OutputStream stream = Files.newOutputStream(path)) {
+        try (OutputStream stream = Files.newOutputStream(path)) {
             write(stream);
         }
     }
@@ -87,26 +87,26 @@ public class ArcSettings {
 
         stream.writeInt(values.size());
 
-        for(Map.Entry<String, Object> entry : values.entrySet()) {
+        for (Map.Entry<String, Object> entry : values.entrySet()) {
             stream.writeUTF(entry.getKey());
             Object value = entry.getValue();
 
-            if(value instanceof Boolean) {
+            if (value instanceof Boolean) {
                 stream.writeByte(TYPE_BOOLEAN);
                 stream.writeBoolean((Boolean) value);
-            } else if(value instanceof Integer) {
+            } else if (value instanceof Integer) {
                 stream.writeByte(TYPE_INTEGER);
                 stream.writeInt((Integer) value);
-            } else if(value instanceof Long) {
+            } else if (value instanceof Long) {
                 stream.writeByte(TYPE_LONG);
                 stream.writeLong((Long) value);
-            } else if(value instanceof Float) {
+            } else if (value instanceof Float) {
                 stream.writeByte(TYPE_FLOAT);
                 stream.writeFloat((Float) value);
-            } else if(value instanceof String) {
+            } else if (value instanceof String) {
                 stream.writeByte(TYPE_STRING);
                 stream.writeUTF((String) value);
-            } else if(value instanceof byte[]) {
+            } else if (value instanceof byte[]) {
                 stream.writeByte(TYPE_BINARY);
                 stream.writeInt(((byte[]) value).length);
                 stream.write((byte[]) value);

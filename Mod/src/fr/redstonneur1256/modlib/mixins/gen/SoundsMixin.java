@@ -22,7 +22,7 @@ public class SoundsMixin {
     private static void init(CallbackInfo ci) {
         // idToSound is generated upon loading the sounds and is missing on the server, generate it anyway
 
-        for(ObjectIntMap.Entry<Sound> entry : soundToId) {
+        for (ObjectIntMap.Entry<Sound> entry : soundToId) {
             idToSound.put(entry.value, entry.key);
         }
     }

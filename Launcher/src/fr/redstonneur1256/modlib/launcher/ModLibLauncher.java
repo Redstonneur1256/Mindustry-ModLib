@@ -41,7 +41,7 @@ public class ModLibLauncher {
     public static ModLibLauncher launcher;
 
     public static void main(String[] args) {
-        if(args.length < 4) {
+        if (args.length < 4) {
             System.exit(1);
         }
 
@@ -55,11 +55,9 @@ public class ModLibLauncher {
 
             launcher = new ModLibLauncher(args, mindustryExecutable, gameDirectory, isServer, extraArguments);
             launcher.openGame();
-        } catch(Throwable throwable) {
+        } catch (Throwable throwable) {
             System.err.println("Mindustry has crashed:");
             throwable.printStackTrace();
-
-            boolean needsJavaUpdate = throwable instanceof UnsupportedClassVersionError;
 
             try {
                 UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -67,18 +65,18 @@ public class ModLibLauncher {
                 StringWriter writer = new StringWriter();
                 throwable.printStackTrace(new PrintWriter(writer));
                 JOptionPane.showMessageDialog(null, writer.toString(), "Mindustry has crashed", JOptionPane.ERROR_MESSAGE);
-            } catch(Throwable ignored) {
+            } catch (Throwable ignored) {
             }
 
             File crashReportDirectory = new File(gameDirectory, "crashes");
-            if(!crashReportDirectory.exists() && !crashReportDirectory.mkdirs()) {
+            if (!crashReportDirectory.exists() && !crashReportDirectory.mkdirs()) {
                 System.err.println("Unable to create crash report directory");
             }
 
             String date = DateTimeFormatter.ofPattern("MM_dd_yyyy_HH_mm_ss").format(LocalDateTime.now());
             File crashReportFile = new File(crashReportDirectory, "modlib-crash-" + date + ".txt");
 
-            try(PrintStream writer = new PrintStream(crashReportFile.getAbsolutePath())) {
+            try (PrintStream writer = new PrintStream(crashReportFile.getAbsolutePath())) {
                 writer.printf("Mindustry has crashed.%n");
                 writer.println();
                 writer.printf("Version: %s%n", version);
@@ -86,7 +84,7 @@ public class ModLibLauncher {
                 writer.printf("Java: %s%n", System.getProperty("java.version"));
                 writer.println();
                 throwable.printStackTrace(writer);
-            } catch(IOException exception) {
+            } catch (IOException exception) {
                 System.err.println("Unable to create crash report file");
                 exception.printStackTrace();
             }
@@ -148,14 +146,14 @@ public class ModLibLauncher {
 
         mainMethod.invoke(null, (Object) extraArguments.toArray(new String[0]));
 
-        if(server) {
+        if (server) {
             // HeadlessApplication is non-blocking causing the class loader to close.
             return;
         }
 
         loader.close();
 
-        if(!restartGame) {
+        if (!restartGame) {
             return;
         }
 
@@ -166,12 +164,12 @@ public class ModLibLauncher {
 
         List<String> command = new ArrayList<>(8);
         command.add(System.getProperty("java.home") + File.separator + "bin" + File.separator + "java" + (windows ? ".exe" : ""));
-        if(mac) {
+        if (mac) {
             command.add("-XstartOnFirstThread");
         }
         command.add("-jar");
 
-        if(fastRestart) {
+        if (fastRestart) {
             command.add(new File(ModLibLauncher.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getAbsolutePath());
             command.addAll(Arrays.asList(rawArgs));
         } else {
@@ -185,7 +183,7 @@ public class ModLibLauncher {
         System.out.printf("(Re)loading game settings%n");
 
         File settingsFile = new File(gameDirectory, "settings.bin");
-        if(settingsFile.exists()) {
+        if (settingsFile.exists()) {
             settings.load(settingsFile);
         }
     }
@@ -203,26 +201,26 @@ public class ModLibLauncher {
     private void loadModMixins() {
         // Add mods to classloader and load mixins
         File[] modFiles = modsDirectory.listFiles();
-        if(modFiles == null) {
+        if (modFiles == null) {
             return;
         }
-        for(File file : modFiles) {
+        for (File file : modFiles) {
             try {
                 loader.addURL(file.toURI().toURL());
 
-                if(file.isDirectory()) {
+                if (file.isDirectory()) {
                     loadMod(file.getName(), new DirectFileProvider(file));
                     continue;
                 }
 
-                try(ZipFile zip = new ZipFile(file)) {
+                try (ZipFile zip = new ZipFile(file)) {
                     loadMod(file.getName(), new ZipFileProvider(zip));
-                } catch(ZipException exception) {
+                } catch (ZipException exception) {
                     System.err.printf("Potentially corrupted mod file \"%s\"%n", file);
                     exception.printStackTrace();
                 }
-            } catch(IOException | ParseException exception) {
-                System.err.println("Exception trying to read mod meta:");
+            } catch (IOException | ParseException exception) {
+                System.err.println("Exception trying to read meta for mod " + file + ":");
                 exception.printStackTrace();
             }
         }
@@ -230,16 +228,16 @@ public class ModLibLauncher {
 
     private void loadMod(String pathName, FileProvider provider) throws IOException, ParseException {
         Optional<String> optional = Arrays.stream(META_FILES).filter(provider::exists).findFirst();
-        if(!optional.isPresent()) {
+        if (!optional.isPresent()) {
             System.err.printf("Could not find a meta file for mod file \"%s\"%n", pathName);
             return;
         }
 
-        try(Reader reader = new InputStreamReader(provider.getStream(optional.get()))) {
+        try (Reader reader = new InputStreamReader(provider.getStream(optional.get()))) {
             JsonObject metadata = JsonValue.readHjson(reader).asObject();
 
             JsonValue gameArguments = metadata.get("gameArguments");
-            if(gameArguments != null && gameArguments.isArray()) {
+            if (gameArguments != null && gameArguments.isArray()) {
                 extraArguments.addAll(gameArguments.asArray()
                         .values()
                         .stream()
@@ -251,7 +249,7 @@ public class ModLibLauncher {
 
             boolean modEnabled = settings.get(Boolean.class, "mod-" + name + "-enabled", true);
             String mixinsPath = name + ".mixins.json";
-            if(modEnabled && provider.exists(mixinsPath)) {
+            if (modEnabled && provider.exists(mixinsPath)) {
                 Mixins.addConfiguration(mixinsPath);
             }
         }

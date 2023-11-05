@@ -45,7 +45,7 @@ public class CustomPacketExample {
 
             // When the data is synced on the client side the event is fired with no player, on this example
             // we only want to send the packet from the server side
-            if(event.player == null) {
+            if (event.player == null) {
                 return;
             }
 
@@ -54,7 +54,7 @@ public class CustomPacketExample {
             // Player doesn't have ModLib: game closes the connection due to the unknown packet id
             // Player has ModLib but not the packet: it's discarded silently
             // Player has ModLib and the packet: it's handled normally
-            if(((MConnection) event.player.con).supportsPacket(MessagePacket.class)) {
+            if (((MConnection) event.player.con).supportsPacket(MessagePacket.class)) {
 
                 // Send a message packet with the text "Hello <PlayerName>" to the player
                 MessagePacket packet = new MessagePacket();
@@ -68,12 +68,12 @@ public class CustomPacketExample {
         Events.run(EventType.Trigger.update, () -> {
 
             // Check if the key J has been tapped, and we are connected to a server
-            if(Core.input.keyTap(ExampleKeyBinds.demo) && Vars.net.client()) {
+            if (Core.input.keyTap(ExampleKeyBinds.demo) && Vars.net.client()) {
 
                 // Check if the server we are currently connected on support this packet
                 // If you try to send the packet on a server where it's not supported it will be
                 // silently discarded to avoid client being disconnected
-                if(MVars.net.supportsPacket(MessagePacket.class)) {
+                if (MVars.net.supportsPacket(MessagePacket.class)) {
 
                     // Send a simple packet to the server saying hello
                     MessagePacket packet = new MessagePacket();

@@ -1,0 +1,33 @@
+def gameDataDirectory = '<game data directory path'
+// Windows: 'C:/Users/<username>/AppData/Roaming/Mindustry'
+// Linux: '/home/<username>/.local/share/Mindustry'
+
+def gameExecutable = 'mindustry.jar'
+// for example can be C:/Users/User/Desktop/Mindustry.jar or any other path to the game's jar
+
+if (file(gameDataDirectory).directory && file(gameExecutable).file) {
+    tasks.register('buildAndRun') {
+        dependsOn(tasks.packJar)
+        dependsOn(project(':Example').tasks.shadowJar)
+
+        doLast {
+            // probably a better way to do this
+            Thread.sleep(1000)
+
+            // Copy mods to game
+            copy {
+                from "${project(':Example').buildDir}/libs/${project(':Example').shadowJar.archiveFileName.get()}"
+                into "$gameDataDirectory/mods"
+            }
+            copy {
+                from "$buildDir/libs/${packJar.archiveFileName.get()}"
+                into "$gameDataDirectory/mods"
+            }
+
+            // Run the game
+            ProcessBuilder builder = new ProcessBuilder()
+            builder.command('java', '-Dmodlib.inherit=true', '-jar', gameExecutable)
+            builder.start().waitForProcessOutput(System.out, System.err)
+        }
+    }
+}

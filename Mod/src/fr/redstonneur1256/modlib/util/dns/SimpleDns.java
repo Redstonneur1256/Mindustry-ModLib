@@ -56,13 +56,13 @@ public class SimpleDns {
         manager.submit(() -> {
             VariableCache<String, Seq<DnsRecord>> cache = caches.get(type, VariableCache::new);
             Seq<DnsRecord> cachedValues = cache.get(domain);
-            if(cachedValues != null) {
+            if (cachedValues != null) {
                 callback.get((Seq<R>) cachedValues);
                 return;
             }
 
             resolveInternal(nameServers, 0, type, domain, reader, records -> {
-                if(records.any()) {
+                if (records.any()) {
                     // little race condition but not very important, checking for another current query of the same type
                     // on the same domain and adding the callback would add much more complexity than it's worth.
                     // It would also be very rare that the same domain would be looked up twice at the same time
@@ -75,7 +75,7 @@ public class SimpleDns {
 
     private <R extends DnsRecord> void resolveInternal(Seq<InetSocketAddress> servers, int serverIndex, int type, String domain,
                                                        RecordReader<R> reader, Cons<Seq<R>> callback) {
-        if(serverIndex >= servers.size) {
+        if (serverIndex >= servers.size) {
             return;
         }
         Runnable failureHandler = () -> resolveInternal(servers, serverIndex + 1, type, domain, reader, callback);
@@ -89,7 +89,7 @@ public class SimpleDns {
                 connection.close();
 
                 short responseId = buffer.getShort();
-                if(responseId != id) {
+                if (responseId != id) {
                     resolveInternal(servers, serverIndex + 1, type, domain, reader, callback);
                     Log.warn("Invalid response from DNS server @", servers.get(serverIndex));
                     return;
@@ -102,7 +102,7 @@ public class SimpleDns {
                 buffer.getShort();
 
                 byte len;
-                while((len = buffer.get()) != 0) {
+                while ((len = buffer.get()) != 0) {
                     buffer.position(buffer.position() + len);
                 }
 
@@ -111,7 +111,7 @@ public class SimpleDns {
 
                 Seq<R> records = new Seq<>(answers);
 
-                for(int i = 0; i < answers; i++) {
+                for (int i = 0; i < answers; i++) {
                     buffer.getShort();                           // OFFSET
                     int answerType = buffer.getShort() & 0xFFFF; // Type
                     buffer.getShort();                           // Class
@@ -119,7 +119,7 @@ public class SimpleDns {
                     int length = buffer.getShort() & 0xFFFF;     // Data length
 
                     // Optionally CNAME results will be returned with the A results, skip those
-                    if(answerType != type) {
+                    if (answerType != type) {
                         buffer.position(buffer.position() + length);
                         continue;
                     }
@@ -143,7 +143,7 @@ public class SimpleDns {
             buffer.putShort((short) 0);      // Additional
 
             // Domain
-            for(String part : domain.split("\\.")) {
+            for (String part : domain.split("\\.")) {
                 buffer.put((byte) part.length());
                 buffer.put(part.getBytes(StandardCharsets.UTF_8));
             }

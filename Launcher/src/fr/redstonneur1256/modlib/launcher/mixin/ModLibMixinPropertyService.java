@@ -52,8 +52,8 @@ public class ModLibMixinPropertyService implements IGlobalPropertyService {
 
         @Override
         public boolean equals(Object o) {
-            if(this == o) return true;
-            if(o == null || getClass() != o.getClass()) return false;
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
             Key key = (Key) o;
             return Objects.equals(name, key.name);
         }

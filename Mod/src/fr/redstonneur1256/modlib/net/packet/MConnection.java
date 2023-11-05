@@ -53,8 +53,8 @@ public interface MConnection {
     }
 
     <R extends MPacket> void sendPacket(@NotNull MPacket packet, @Nullable MPacket original,
-                                                @Nullable Class<R> expectedReply, @Nullable Cons<R> callback,
-                                                @Nullable Runnable timeout, long timeoutDuration);
+                                        @Nullable Class<R> expectedReply, @Nullable Cons<R> callback,
+                                        @Nullable Runnable timeout, long timeoutDuration);
 
     void received(MPacket packet);
 

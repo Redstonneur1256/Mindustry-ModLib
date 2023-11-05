@@ -14,12 +14,12 @@ public class ModLib extends Mod {
 
     @Override
     public void init() {
-        if(!LauncherInitializer.isInitialized()) {
+        if (!LauncherInitializer.isInitialized()) {
             return;
         }
 
         MVars.net = new MNet();
-        if(!Vars.headless) {
+        if (!Vars.headless) {
             MVars.ui = new MUI();
         }
     }

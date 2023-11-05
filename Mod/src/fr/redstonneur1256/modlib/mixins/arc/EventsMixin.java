@@ -14,7 +14,7 @@ public class EventsMixin {
     private static <T> void redirectFireEnum(Cons<T> instance, T t) {
         try {
             instance.get(t);
-        } catch(Throwable throwable) {
+        } catch (Throwable throwable) {
             Log.err("Failed to dispatch event listener " + instance, throwable);
         }
     }
@@ -23,7 +23,7 @@ public class EventsMixin {
     private static <T> void redirectFire(Cons<T> instance, T t) {
         try {
             instance.get(t);
-        } catch(Throwable throwable) {
+        } catch (Throwable throwable) {
             Log.err("Failed to dispatch event listener " + instance, throwable);
         }
     }

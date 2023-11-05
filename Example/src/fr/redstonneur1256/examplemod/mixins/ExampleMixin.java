@@ -20,8 +20,8 @@ public class ExampleMixin {
 
     @Inject(method = "buttons", at = @At("TAIL"))
     private void buttons(Table table, MenuFragment.MenuButton[] buttons, CallbackInfo ci) {
-        for(Element child : table.getChildren()) {
-            if(child instanceof TextButton) {
+        for (Element child : table.getChildren()) {
+            if (child instanceof TextButton) {
                 Label label = ((TextButton) child).getLabel();
                 String text = label.getText().toString();
                 label.setText(() -> String.format("[#%06X]%s", Tmp.c1.fromHsv(Time.time, 1, 1).rgb888(), text));

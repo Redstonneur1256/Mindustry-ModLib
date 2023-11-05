@@ -52,6 +52,11 @@ Using the library:
 
 See the `Example` module for usage examples.
 
+Contributing:
+------
+
+See [CONTRIBUTING](CONTRIBUTING.md)
+
 Contributors:
 -------
 

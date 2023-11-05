@@ -70,7 +70,7 @@ public class MNet implements MConnection {
         MTypeIO.init();
 
         Net.NetProvider provider = Reflect.get(Vars.net, "provider");
-        if(!(provider instanceof ArcNetProvider)) { // must be steam networking
+        if (!(provider instanceof ArcNetProvider)) { // must be steam networking
             provider = Reflect.get(provider, "provider");
         }
         Server server = Reflect.get(provider, "server");
@@ -83,14 +83,14 @@ public class MNet implements MConnection {
                 event.setDefaults();
                 Events.fire(event);
 
-                if(!event.offline) {
+                if (!event.offline) {
                     ByteBuffer buffer = event.writeServerData();
                     buffer.position(0);
                     handler.respond(buffer);
                 }
 
                 Pools.free(event);
-            } catch(Throwable throwable) {
+            } catch (Throwable throwable) {
                 Log.err("Exception processing server ping", throwable);
             }
         });
@@ -114,20 +114,20 @@ public class MNet implements MConnection {
     public <R extends MPacket> void sendPacket(@NotNull MPacket packet, @Nullable MPacket original,
                                                @Nullable Class<R> expectedReply, @Nullable Cons<R> callback,
                                                @Nullable Runnable timeout, long timeoutDuration) {
-        if(nonce >= Short.MAX_VALUE) {
+        if (nonce >= Short.MAX_VALUE) {
             nonce = 1;
         }
         short nonce = (short) this.nonce++;
         packet.nonce = nonce;
         packet.parent = original == null ? 0 : original.nonce;
 
-        if(expectedReply != null) {
+        if (expectedReply != null) {
             WaitingListener<R> listener = new WaitingListener<>(expectedReply, callback);
             listeners.put(nonce, listener);
-            if(timeoutDuration > 0) {
+            if (timeoutDuration > 0) {
                 listener.setTimeoutTask(scheduler.schedule(() -> {
                     listeners.remove(nonce);
-                    if(timeout != null) {
+                    if (timeout != null) {
                         Core.app.post(timeout);
                     }
                 }, timeoutDuration, TimeUnit.MILLISECONDS));
@@ -145,13 +145,13 @@ public class MNet implements MConnection {
     @SuppressWarnings("unchecked")
     public static void handlePacket(MPacket packet, IntMap<WaitingListener<?>> listeners) {
         WaitingListener<?> listener = listeners.remove(packet.parent);
-        if(listener != null) {
-            if(listener.getType().isAssignableFrom(packet.getClass())) {
+        if (listener != null) {
+            if (listener.getType().isAssignableFrom(packet.getClass())) {
                 ((Cons<MPacket>) listener.getCallback()).get(packet);
             } else {
                 listener.getCallback().get(null);
             }
-            if(listener.getTimeoutTask() != null) {
+            if (listener.getTimeoutTask() != null) {
                 listener.getTimeoutTask().cancel(false);
             }
         }

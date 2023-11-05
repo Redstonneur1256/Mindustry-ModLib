@@ -20,10 +20,7 @@ import mindustry.net.ArcNetProvider;
 import mindustry.net.Streamable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.spongepowered.asm.mixin.Final;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
-import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -38,10 +35,10 @@ public abstract class ArcConnectionMixin implements MPlayerConnection, MConnecti
     @Final
     public Connection connection;
 
-    private int nonce = 1;
-    private IntMap<WaitingListener<?>> listeners = new IntMap<>();
-    private BitSet supportedPackets;
-    private Seq<String> supportedCallClasses;
+    private @Unique int nonce = 1;
+    private @Unique IntMap<WaitingListener<?>> listeners = new IntMap<>();
+    private @Unique BitSet supportedPackets;
+    private @Unique Seq<String> supportedCallClasses;
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void init(ArcNetProvider this$0, String address, Connection connection, CallbackInfo ci) {
@@ -66,11 +63,11 @@ public abstract class ArcConnectionMixin implements MPlayerConnection, MConnecti
     @Override
     public boolean supportsPacket(Class<?> packet) {
         int id = PacketManager.getId(packet);
-        if(id == -1) {
+        if (id == -1) {
             // The packet class is not registered, unsupported.
             return false;
         }
-        if(supportedPackets == null) {
+        if (supportedPackets == null) {
             // Not synced yet, assume only vanilla packets are available
             return id < PacketManager.getVanillaPacketCount();
         }
@@ -86,20 +83,20 @@ public abstract class ArcConnectionMixin implements MPlayerConnection, MConnecti
     public <R extends MPacket> void sendPacket(@NotNull MPacket packet, @Nullable MPacket original,
                                                @Nullable Class<R> expectedReply, @Nullable Cons<R> callback,
                                                @Nullable Runnable timeout, long timeoutDuration) {
-        if(nonce >= Short.MAX_VALUE) {
+        if (nonce >= Short.MAX_VALUE) {
             nonce = 1;
         }
         short nonce = (short) this.nonce++;
         packet.nonce = nonce;
         packet.parent = original == null ? 0 : original.nonce;
 
-        if(expectedReply != null) {
+        if (expectedReply != null) {
             WaitingListener<R> listener = new WaitingListener<>(expectedReply, callback);
             listeners.put(nonce, listener);
-            if(timeoutDuration > 0) {
+            if (timeoutDuration > 0) {
                 listener.setTimeoutTask(MVars.net.getScheduler().schedule(() -> {
                     listeners.remove(nonce);
-                    if(timeout != null) {
+                    if (timeout != null) {
                         Core.app.post(timeout);
                     }
                 }, timeoutDuration, TimeUnit.MILLISECONDS));

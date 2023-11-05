@@ -115,7 +115,7 @@ public class ServerListPingEvent {
         buffer.putInt(playerLimit);
 
         writeString(buffer, description);
-        if(customGamemode != null) {
+        if (customGamemode != null) {
             writeString(buffer, customGamemode);
         }
 

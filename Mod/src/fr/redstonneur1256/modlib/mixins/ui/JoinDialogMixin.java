@@ -24,7 +24,7 @@ public abstract class JoinDialogMixin {
     )
     private void injectRefreshButton(String label, boolean eye, Collapser coll, Table name, CallbackInfo ci) {
         name.button(Icon.refresh, Styles.emptyi, () -> {
-            switch(label) {
+            switch (label) {
                 case "@servers.local.steam":
                 case "@servers.local":
                     refreshLocal();

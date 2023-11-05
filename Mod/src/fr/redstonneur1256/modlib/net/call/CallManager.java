@@ -57,16 +57,16 @@ public class CallManager {
     }
 
     public <T> void registerCall(Class<T> type, T implementation) {
-        if(Vars.net.active()) {
+        if (Vars.net.active()) {
             throw new IllegalStateException("Cannot register new call classes while connected to a server or hosting a server");
         }
 
         Seq<CallMethod> methods = new Seq<>();
         CallClass<T> callClass = new CallClass<>(type, implementation, methods);
 
-        for(Method method : type.getDeclaredMethods()) {
+        for (Method method : type.getDeclaredMethods()) {
             Class<?> returnType = method.getReturnType();
-            if(!returnType.equals(CallResult.class) && !returnType.equals(void.class)) {
+            if (!returnType.equals(CallResult.class) && !returnType.equals(void.class)) {
                 Log.warn("The method @#@ does not return CallResult or void and will be ignored", type.getName(), method.getName());
                 continue;
             }
@@ -75,13 +75,13 @@ public class CallManager {
             Execution execution = Execution.MAIN;
 
             Remote remote = method.getAnnotation(Remote.class);
-            if(remote != null) {
+            if (remote != null) {
                 side = remote.side();
                 execution = remote.execution();
             }
 
             Class<?>[] parameters = method.getParameterTypes();
-            if((side == Side.SERVER || side == Side.BOTH) && (parameters.length == 0 || parameters[0] != Player.class)) {
+            if ((side == Side.SERVER || side == Side.BOTH) && (parameters.length == 0 || parameters[0] != Player.class)) {
                 Log.warn("The method @#@ is declared to be available on server side but the first parameter is not Player, it will be ignored", type.getName(), method.getName());
                 continue;
             }
@@ -104,21 +104,19 @@ public class CallManager {
         return (T) Proxy.newProxyInstance(type.getClassLoader(), new Class[] { type }, new CallProxyHandler(type, this));
     }
 
-    /**
-     * Called upon server start to reset active methods and assign them an ID
-     */
+    // Called upon server start to reset active methods and assign them an ID
     private void resetMethods() {
         activeClasses.clear();
         activeMethods.clear();
         methodIds.clear();
 
         int i = 0;
-        for(CallClass<?> callClass : registeredClasses.values()) {
+        for (CallClass<?> callClass : registeredClasses.values()) {
             activeClasses.add(callClass.getType());
             activeMethods.ensureCapacity(callClass.getMethodCount());
             methodIds.ensureCapacity(callClass.getMethodCount());
 
-            for(CallMethod method : callClass.getMethods()) {
+            for (CallMethod method : callClass.getMethods()) {
                 method.setId(i++);
 
                 activeMethods.add(method);
@@ -127,71 +125,67 @@ public class CallManager {
         }
     }
 
-    /**
-     * Call on the server to write all methods
-     */
+    // Called on server-side when synchronizing all methods to clients
     public void writeMethods(DataOutput stream) throws IOException {
         stream.writeInt(registeredClasses.size);
 
-        for(CallClass<?> callClass : registeredClasses.values()) {
+        for (CallClass<?> callClass : registeredClasses.values()) {
             stream.writeUTF(callClass.getType().getName());
 
             stream.writeInt(callClass.getMethods().size);
-            for(CallMethod method : callClass.getMethods()) {
+            for (CallMethod method : callClass.getMethods()) {
                 stream.writeInt(method.getId());
                 stream.writeUTF(method.getName());
                 stream.writeInt(method.getParameters().length);
-                for(Class<?> parameter : method.getParameters()) {
+                for (Class<?> parameter : method.getParameters()) {
                     stream.writeUTF(parameter.getName());
                 }
             }
         }
     }
 
-    /**
-     * Called on client side to read methods sent by the server and synchronize the identifiers
-     */
+    // Called on client-side to read methods sent by the server
     public void readMethods(DataInput stream) throws IOException {
         activeClasses.clear();
         activeMethods.clear();
         methodIds.clear();
 
         int classCount = stream.readInt();
-        for(int i = 0; i < classCount; i++) {
+        for (int i = 0; i < classCount; i++) {
             String className = stream.readUTF();
 
             int methodCount = stream.readInt();
             Seq<MethodSignature> methods = new Seq<>(methodCount);
 
-            for(int j = 0; j < methodCount; j++) {
+            for (int j = 0; j < methodCount; j++) {
                 int id = stream.readInt();
                 String name = stream.readUTF();
                 String[] parameters = new String[stream.readInt()];
-                for(int h = 0; h < parameters.length; h++) {
+                for (int h = 0; h < parameters.length; h++) {
                     parameters[h] = stream.readUTF();
                 }
                 methods.add(new MethodSignature(id, name, parameters));
             }
 
             CallClass<?> callClass = registeredClasses.get(className);
-            if(callClass == null) {
+            if (callClass == null) {
                 Log.warn("Call class @ is present on server but not on client", className);
                 continue;
             }
 
             activeClasses.add(callClass.getType());
 
-            for(MethodSignature signature : methods) {
+            for (MethodSignature signature : methods) {
                 String name = null;
                 try {
                     Class<?>[] parameters = new Class<?>[signature.getParameterCount()];
-                    for(int j = 0; j < parameters.length; j++) {
+                    for (int j = 0; j < parameters.length; j++) {
                         name = signature.getParametersName()[j];
                         parameters[j] = MTypeIO.getType(name);
                     }
 
                     CallMethod method = callClass.getMethods().find(m -> m.getName().equals(signature.getName()) && Arrays.equals(m.getParameters(), parameters));
-                    if(method == null) {
+                    if (method == null) {
                         activeMethods.add((CallMethod) null);
                         Log.warn("Could not resolve method @ with parameters @ in class @", signature.getName(), Arrays.toString(parameters), className);
                         continue;
@@ -201,7 +195,7 @@ public class CallManager {
 
                     activeMethods.add(method);
                     methodIds.put(method.getMethod(), method.getId());
-                } catch(ClassNotFoundException exception) {
+                } catch (ClassNotFoundException exception) {
                     activeMethods.add((CallMethod) null);
                     Log.warn("Method @ in class @ contains invalid type @", signature.getName(), className, name);
                 }
@@ -223,13 +217,13 @@ public class CallManager {
 
     private void invokeMethod(Player player, CustomInvokePacket packet, Cons<CustomInvokeResultPacket> consumer) {
         CallMethod method = activeMethods.get(packet.method);
-        if(method == null) {
+        if (method == null) {
             consumer.get(new CustomInvokeResultPacket(null, new NoSuchMethodException()));
             return;
         }
 
         Object[] args = packet.arguments;
-        if(player != null) {
+        if (player != null) {
             args[0] = player;
         }
 
@@ -237,7 +231,7 @@ public class CallManager {
             try {
                 Object result = method.invoke(args);
 
-                if(result instanceof CallResult) {
+                if (result instanceof CallResult) {
                     CallResult<?> callResult = (CallResult<?>) result;
                     callResult.onComplete(object -> consumer.get(new CustomInvokeResultPacket(object, null)));
                     callResult.onFail(object -> consumer.get(new CustomInvokeResultPacket(object, null)));
@@ -245,9 +239,9 @@ public class CallManager {
                 }
 
                 consumer.get(new CustomInvokeResultPacket(result, null));
-            } catch(Throwable exception) {
+            } catch (Throwable exception) {
                 Throwable throwable = exception;
-                if(throwable instanceof InvocationTargetException) {
+                if (throwable instanceof InvocationTargetException) {
                     throwable = throwable.getCause();
                 }
 
