@@ -31,12 +31,16 @@ public class SimpleDns {
      */
     private ByteBuffer buffer;
     private IntMap<VariableCache<String, Seq<DnsRecord>>> caches;
+    private Seq<InetSocketAddress> nameServers;
 
     public SimpleDns(UdpConnectionManager manager) {
         this.manager = manager;
         this.random = new Rand();
         this.buffer = ByteBuffer.allocate(512);
         this.caches = new IntMap<>();
+        this.nameServers = ArcDns.getNameservers(); // cache nameservers because arc makes a copy of the list every time
+
+        Log.debug("Using nameservers @", nameServers);
     }
 
     public void resolveA(String domain, Cons<Seq<ARecord>> callback) {
@@ -57,7 +61,7 @@ public class SimpleDns {
                 return;
             }
 
-            resolveInternal(ArcDns.getNameservers(), 0, type, domain, reader, records -> {
+            resolveInternal(nameServers, 0, type, domain, reader, records -> {
                 if(records.any()) {
                     // little race condition but not very important, checking for another current query of the same type
                     // on the same domain and adding the callback would add much more complexity than it's worth.
@@ -74,8 +78,10 @@ public class SimpleDns {
         if(serverIndex >= servers.size) {
             return;
         }
+        Runnable failureHandler = () -> resolveInternal(servers, serverIndex + 1, type, domain, reader, callback);
+
         manager.connect(servers.get(serverIndex), 2000, buffer, connection -> {
-            connection.setTimeoutHandler(() -> resolveInternal(servers, serverIndex + 1, type, domain, reader, callback));
+            connection.setTimeoutHandler(failureHandler);
 
             short id = (short) random.nextInt(Short.MAX_VALUE);
 
@@ -148,7 +154,7 @@ public class SimpleDns {
 
             buffer.flip();
             connection.send(buffer);
-        });
+        }, exception -> failureHandler.run());
     }
 
     public interface RecordReader<R extends DnsRecord> {

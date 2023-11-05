@@ -24,9 +24,7 @@ import java.util.concurrent.ConcurrentLinkedDeque;
  */
 public class UdpConnectionManager {
 
-    /**
-     * Does not need to be concurrent as all the operations are being run from the network thread
-     */
+    // Does not need to be concurrent as all the operations are being run from the network thread
     private PriorityQueue<SimpleUdpConnection> connections;
     private Queue<UnsafeRunnable> taskQueue;
     private Selector selector;
@@ -50,28 +48,34 @@ public class UdpConnectionManager {
         selector.wakeup();
     }
 
-    public void connect(InetSocketAddress address, int idleTimeout, ByteBuffer receiveBuffer, Cons<SimpleUdpConnection> onConnect) {
-        if(idleTimeout <= 0) {
+    public void connect(InetSocketAddress address, int idleTimeout, ByteBuffer receiveBuffer, Cons<SimpleUdpConnection> onConnect, Cons<IOException> connectionError) {
+        if (idleTimeout <= 0) {
             throw new IllegalStateException("Connection idle timeout cannot be <= 0");
         }
 
         checkShutdown();
         submit(() -> {
-            if(address.isUnresolved()) {
-                Log.warn("Attempted to connect to an unresolved address @", address);
-                return;
+            try {
+                if(address.isUnresolved()) {
+                    Log.warn("Attempted to connect to an unresolved address @", address);
+                    return;
+                }
+                DatagramChannel channel = selector.provider().openDatagramChannel();
+                channel.connect(address);
+
+                channel.configureBlocking(false);
+                SelectionKey key = channel.register(selector, SelectionKey.OP_READ);
+
+                SimpleUdpConnection connection = new SimpleUdpConnection(this, address, channel, key, receiveBuffer, idleTimeout);
+                key.attach(connection);
+                connections.offer(connection);
+
+                onConnect.get(connection);
+            } catch (IOException exception) {
+                if(connectionError != null) {
+                    connectionError.get(exception);
+                }
             }
-            DatagramChannel channel = selector.provider().openDatagramChannel();
-            channel.connect(address);
-
-            channel.configureBlocking(false);
-            SelectionKey key = channel.register(selector, SelectionKey.OP_READ);
-
-            SimpleUdpConnection connection = new SimpleUdpConnection(this, address, channel, key, receiveBuffer, idleTimeout);
-            key.attach(connection);
-            connections.offer(connection);
-
-            onConnect.get(connection);
         });
     }
 

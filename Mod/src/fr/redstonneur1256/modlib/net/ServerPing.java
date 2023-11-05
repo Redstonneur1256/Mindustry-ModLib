@@ -72,7 +72,7 @@ public class ServerPing {
             });
             PING_HEADER.position(0);
             connection.send(PING_HEADER);
-        });
+        }, exception -> failure.run());
     }
 
 }
