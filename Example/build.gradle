@@ -1,9 +1,0 @@
-plugins {
-    id 'com.github.johnrengelman.shadow'
-}
-
-dependencies {
-    compileOnly project(':Mod')
-    compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
-}
-sourceSets.main.resources.srcDirs = ['res/']

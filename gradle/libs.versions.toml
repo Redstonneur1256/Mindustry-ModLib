@@ -1,0 +1,18 @@
+[versions]
+asm = "9.2"
+mindustry = "v146"
+
+[libraries]
+annotations = "org.jetbrains:annotations:24.0.0"
+anuken-arc = { module = "com.github.Anuken.Arc:arc-core", version.ref = "mindustry" }
+anuken-mindustry = { module = "com.github.Anuken.Mindustry:core", version.ref = "mindustry" }
+asm-tree = { module = "org.ow2.asm:asm-tree", version.ref = "asm" }
+asm-commons = { module = "org.ow2.asm:asm-commons", version.ref = "asm" }
+asm-util = { module = "org.ow2.asm:asm-util", version.ref = "asm" }
+mixin = "org.spongepowered:mixin:0.8.5"
+gson = "com.google.code.gson:gson:2.10.1"
+hjson = "org.hjson:hjson:3.0.0"
+
+[bundles]
+mindustry = ["anuken-arc", "anuken-mindustry"]
+asm = ["asm-tree", "asm-commons", "asm-util"]
