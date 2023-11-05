@@ -12,7 +12,7 @@ subprojects {
     apply(plugin = "com.github.johnrengelman.shadow")
 
     group = "fr.redstonneur1256"
-    version = System.getenv("GITHUB_VERSION")?.subSequence(0, 8) ?: "dev-SNAPSHOT"
+    version = System.getenv("GITHUB_VERSION") ?: "dev"
 
     java {
         withJavadocJar()
