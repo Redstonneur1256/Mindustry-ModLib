@@ -1,0 +1,5 @@
+accessWidener v2 named
+# ModLib ignores if the access widener is defined as named or intermediary as Mindustry code isn't obfuscated and doesn't require mappings
+
+# For defining accesses please see Fabric's documenation at https://fabricmc.net/wiki/tutorial:accesswideners
+# Example showing class name/field descriptors structure can be found on https://lazurite.gitbook.io/lazurite-dev-wiki/modding-knowledge/access-wideners

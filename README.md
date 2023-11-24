@@ -50,8 +50,11 @@ Using the library:
     "!mod-library"
   ]
   ```
-  - If using access-wideners you will require the [gradle-access-widener](https://github.com/Redstonneur1256/GradleAccessWidener),
-    please refer to the plugin's documentation for configuration instructions.
+- If using access-wideners you will require the [gradle-access-widener](https://github.com/Redstonneur1256/GradleAccessWidener),
+  please refer to the plugin's documentation for configuration instructions.
+
+Mixin/Access widener files must be present at the root of the mod's file structure, the files name excluding the extension
+must be the exact same than the `name` property defined in your `mod.(h)json`/`plugin.(h)json`.
 
 See the `Example` module for usage examples.
 

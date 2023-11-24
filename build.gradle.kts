@@ -5,7 +5,7 @@ plugins {
     `java-library`
     `maven-publish`
     id("com.github.johnrengelman.shadow") version ("8.1.1") apply (false)
-    id("io.github.redstonneur1256.gradle-access-widener") version ("0.1") apply (false)
+    id("io.github.redstonneur1256.gradle-access-widener") version ("0.2") apply (false)
 }
 
 subprojects {
@@ -26,7 +26,7 @@ subprojects {
     }
 
     configure<AccessWidenerExtension> {
-        paths = rootProject.files("assets/!mod-library.accessWidener")
+        paths.set(rootProject.files("assets/!mod-library.accessWidener"))
     }
 
     tasks.withType(JavaCompile::class.java).configureEach {
