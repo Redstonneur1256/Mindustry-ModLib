@@ -21,6 +21,8 @@ jobs:
 
       - name: Temporary workaround
         run: ./gradlew --no-daemon Common:build
+        env:
+          GITHUB_VERSION: ${{ github.event.release.tag_name }}
 
       - name: Build artifacts
         run: ./gradlew --no-daemon Mod:packJar
