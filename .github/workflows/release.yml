@@ -19,6 +19,9 @@ jobs:
       - name: Set permissions
         run: chmod +x gradlew
 
+      - name: Temporary workaround
+        run: ./gradlew --no-daemon Common:build
+
       - name: Build artifacts
         run: ./gradlew --no-daemon Mod:packJar
         env:
