@@ -32,8 +32,8 @@ public class NetMixin {
     private boolean active;
     @Shadow
     private Streamable.StreamBuilder currentStream;
-    @Shadow
     @Final
+    @Shadow
     private IntMap<Streamable.StreamBuilder> streams;
 
     @Inject(method = "handleException", at = @At("RETURN"))

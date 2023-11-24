@@ -1,4 +1,5 @@
 # Mindustry-ModLib
+
 Library to help developers creating Mindustry mods and optimize some game features  
 If you think some utility or optimization should be added open an issue describing the feature.
 
@@ -49,6 +50,8 @@ Using the library:
     "!mod-library"
   ]
   ```
+  - If using access-wideners you will require the [gradle-access-widener](https://github.com/Redstonneur1256/GradleAccessWidener),
+    please refer to the plugin's documentation for configuration instructions.
 
 See the `Example` module for usage examples.
 

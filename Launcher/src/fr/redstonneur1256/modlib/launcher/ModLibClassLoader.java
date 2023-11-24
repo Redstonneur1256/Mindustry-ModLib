@@ -1,48 +1,32 @@
-package fr.redstonneur1256.modlib.launcher.mixin;
+package fr.redstonneur1256.modlib.launcher;
 
 import fr.redstonneur1256.modlib.launcher.util.Util;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.net.*;
+import java.net.JarURLConnection;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.net.URLConnection;
+import java.net.URLEncoder;
 import java.security.CodeSigner;
 import java.security.CodeSource;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-public class MixinClassLoader extends URLClassLoader {
+public class ModLibClassLoader extends URLClassLoader {
 
-    private static final Object transformer;
-    private static final Method method;
+    private List<ClassTransformer> transformers;
+    private long totalClassLoadingTime;
 
-    static {
-        try {
-            Class<?> transformerClass = Class.forName("org.spongepowered.asm.mixin.transformer.MixinTransformer");
-
-            Constructor<?> constructor = transformerClass.getDeclaredConstructor();
-            constructor.setAccessible(true);
-
-            transformer = constructor.newInstance();
-            method = transformerClass.getDeclaredMethod("transformClassBytes", String.class, String.class, byte[].class);
-            method.setAccessible(true);
-        } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
-        }
-    }
-
-    private long totalFindTime;
-
-    public MixinClassLoader(URL[] urls, ClassLoader parent) {
+    public ModLibClassLoader(URL[] urls, ClassLoader parent) {
         super(urls, parent);
+        this.transformers = new ArrayList<>();
+        this.totalClassLoadingTime = 0;
     }
 
-    public MixinClassLoader(URL[] urls) {
-        super(urls);
-    }
-
-    /**
-     * Public friend :)
-     */
     @Override
     public void addURL(URL url) {
         super.addURL(url);
@@ -81,15 +65,18 @@ public class MixinClassLoader extends URLClassLoader {
                 definePackage(packageName, null, null, null, null, null, null, null);
             }
             byte[] rawClass = connection == null ? null : Util.readFully(connection.getInputStream());
-            byte[] transformed = (byte[]) method.invoke(transformer, name, name, rawClass);
 
-            if (transformed == null) {
+            for (ClassTransformer transformer : transformers) {
+                rawClass = transformer.transform(rawClass, name);
+            }
+
+            if (rawClass == null) {
                 throw new ClassNotFoundException(name);
             }
 
             CodeSource codeSource = url == null ? null : new CodeSource(url, signers);
 
-            Class<?> clazz = defineClass(name, transformed, 0, transformed.length, codeSource);
+            Class<?> clazz = defineClass(name, rawClass, 0, rawClass.length, codeSource);
             if (clazz == null) {
                 throw new ClassNotFoundException(name);
             }
@@ -102,16 +89,28 @@ public class MixinClassLoader extends URLClassLoader {
             }
             throw new RuntimeException(throwable);
         } finally {
-            totalFindTime += System.nanoTime() - start;
+            totalClassLoadingTime += System.nanoTime() - start;
         }
     }
 
-    public long getTotalFindTime() {
-        return totalFindTime;
+    /**
+     * Total time taken to load/transform classes, in nanoseconds
+     */
+    public long getTotalClassLoadingTime() {
+        return totalClassLoadingTime;
     }
 
-    public double getTotalFindTimeMs() {
-        return totalFindTime / 1_000_000.0;
+    public void addTransformer(ClassTransformer transformer) {
+        transformers.add(transformer);
+        transformers.sort(Comparator.comparingInt(ClassTransformer::getTransformerPriority));
+    }
+
+    public void removeTransformer(ClassTransformer transformer) {
+        transformers.remove(transformer);
+    }
+
+    public List<ClassTransformer> getTransformers() {
+        return Collections.unmodifiableList(transformers);
     }
 
 }

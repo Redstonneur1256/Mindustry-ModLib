@@ -4,6 +4,7 @@ dependencies {
     api(project(":Common"))
     api(libs.mixin)
     api(libs.bundles.asm)
+    api(libs.accesswidener)
     api(libs.gson)
     api(libs.hjson)
 }

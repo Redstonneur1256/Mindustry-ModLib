@@ -4,9 +4,11 @@ import fr.redstonneur1256.modlib.ModLibProperties;
 import fr.redstonneur1256.modlib.launcher.file.DirectFileProvider;
 import fr.redstonneur1256.modlib.launcher.file.FileProvider;
 import fr.redstonneur1256.modlib.launcher.file.ZipFileProvider;
-import fr.redstonneur1256.modlib.launcher.mixin.MixinClassLoader;
+import fr.redstonneur1256.modlib.launcher.log.Logger;
+import fr.redstonneur1256.modlib.launcher.mixin.MixinClassTransformer;
 import fr.redstonneur1256.modlib.launcher.mixin.ModLibMixinService;
 import fr.redstonneur1256.modlib.launcher.util.ArcSettings;
+import net.fabricmc.accesswidener.AccessWidenerReader;
 import org.hjson.JsonObject;
 import org.hjson.JsonValue;
 import org.hjson.ParseException;
@@ -16,9 +18,16 @@ import org.spongepowered.asm.mixin.Mixins;
 import org.spongepowered.asm.service.MixinService;
 
 import javax.swing.*;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.StringWriter;
 import java.lang.reflect.Method;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -55,22 +64,22 @@ public class ModLibLauncher {
 
             launcher = new ModLibLauncher(args, mindustryExecutable, gameDirectory, isServer, extraArguments);
             launcher.openGame();
-        } catch (Throwable throwable) {
-            System.err.println("Mindustry has crashed:");
-            throwable.printStackTrace();
+        } catch (Exception exception) {
+            Logger.err("Mindustry has crashed:");
+            Logger.err(exception);
 
             try {
                 UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 
                 StringWriter writer = new StringWriter();
-                throwable.printStackTrace(new PrintWriter(writer));
+                exception.printStackTrace(new PrintWriter(writer));
                 JOptionPane.showMessageDialog(null, writer.toString(), "Mindustry has crashed", JOptionPane.ERROR_MESSAGE);
             } catch (Throwable ignored) {
             }
 
             File crashReportDirectory = new File(gameDirectory, "crashes");
             if (!crashReportDirectory.exists() && !crashReportDirectory.mkdirs()) {
-                System.err.println("Unable to create crash report directory");
+                Logger.err("Unable to create crash report directory");
             }
 
             String date = DateTimeFormatter.ofPattern("MM_dd_yyyy_HH_mm_ss").format(LocalDateTime.now());
@@ -83,10 +92,10 @@ public class ModLibLauncher {
                 writer.printf("OS: %s %s (%s)%n", System.getProperty("os.name"), System.getProperty("sun.arch.data.model"), System.getProperty("os.arch"));
                 writer.printf("Java: %s%n", System.getProperty("java.version"));
                 writer.println();
-                throwable.printStackTrace(writer);
-            } catch (IOException exception) {
-                System.err.println("Unable to create crash report file");
-                exception.printStackTrace();
+                exception.printStackTrace(writer);
+            } catch (IOException exception2) {
+                Logger.err("Unable to create crash report file");
+                Logger.err(exception2);
             }
         }
     }
@@ -99,7 +108,8 @@ public class ModLibLauncher {
     private final File modsDirectory;
     public final ArcSettings settings;
     private ModLibMixinService service;
-    public MixinClassLoader loader;
+    public ModLibClassLoader loader;
+    public AccessWidenerTransformer widenerTransformer;
     /**
      * Should the game automatically be restarted once it's closed
      * Does not apply for servers
@@ -120,25 +130,28 @@ public class ModLibLauncher {
         this.settings = new ArcSettings();
     }
 
-    private void openGame() throws Throwable {
-        System.out.println("  __  __           _ _      _ _     \n" +
+    private void openGame() throws Exception {
+        Logger.log("  __  __           _ _      _ _     \n" +
                 " |  \\/  |         | | |    (_) |    \n" +
                 " | \\  / | ___   __| | |     _| |__  \n" +
                 " | |\\/| |/ _ \\ / _` | |    | | '_ \\ \n" +
                 " | |  | | (_) | (_| | |____| | |_) |\n" +
                 " |_|  |_|\\___/ \\__,_|______|_|_.__/");
-        System.out.printf("Launcher version %s (build %s), %s days old%n", ModLibProperties.VERSION,
-                ModLibProperties.BUILD, ChronoUnit.DAYS.between(ModLibProperties.BUILT, Instant.now()));
+        Logger.log("Launcher version %s (build %s), released %s (%d days ago)%n", ModLibProperties.VERSION,
+                ModLibProperties.BUILD, ModLibProperties.BUILT, ChronoUnit.DAYS.between(ModLibProperties.BUILT, Instant.now()));
+
+        loader = new ModLibClassLoader(new URL[] { mindustryExecutable.toURI().toURL() }, ModLibLauncher.class.getClassLoader());
 
         loadSettings();
-        initMixins();
+        initMixin();
+        initAccessWidener();
 
         Mixins.addConfiguration("launcher.mixins.json");
-        loadModMixins();
+        loadModModifiers();
 
         service.onGameStart();
 
-        System.out.printf("Attempting to launch the game with arguments %s%n", String.join(" ", extraArguments));
+        Logger.log("Launching Mindustry with arguments '%s'", String.join("', '", extraArguments));
 
         String mainClassName = server ? SERVER_MAIN_CLASS : MINDUSTRY_MAIN_CLASS;
         Class<?> mainClass = loader.loadClass(mainClassName);
@@ -157,7 +170,7 @@ public class ModLibLauncher {
             return;
         }
 
-        System.out.println("Mindustry exited for restart, reopening the launcher.");
+        Logger.log("Mindustry exited for restart, reopening the launcher.");
 
         boolean windows = System.getProperty("os.name", "").contains("Windows");
         boolean mac = System.getProperty("os.name", "").contains("Mac");
@@ -180,7 +193,7 @@ public class ModLibLauncher {
     }
 
     private void loadSettings() throws IOException {
-        System.out.printf("(Re)loading game settings%n");
+        Logger.log("Loading Mindustry settings");
 
         File settingsFile = new File(gameDirectory, "settings.bin");
         if (settingsFile.exists()) {
@@ -188,17 +201,22 @@ public class ModLibLauncher {
         }
     }
 
-    private void initMixins() throws MalformedURLException {
-        System.out.printf("Bootstrapping mixins%n");
+    private void initMixin() throws ReflectiveOperationException {
+        Logger.log("Initializing Mixin");
 
         MixinBootstrap.init();
         service = (ModLibMixinService) MixinService.getService();
         MixinEnvironment.getCurrentEnvironment().setSide(server ? MixinEnvironment.Side.SERVER : MixinEnvironment.Side.CLIENT);
 
-        loader = new MixinClassLoader(new URL[] { mindustryExecutable.toURI().toURL() }, ModLibLauncher.class.getClassLoader());
+        loader.addTransformer(new MixinClassTransformer());
     }
 
-    private void loadModMixins() {
+    private void initAccessWidener() {
+        widenerTransformer = new AccessWidenerTransformer();
+        loader.addTransformer(widenerTransformer);
+    }
+
+    private void loadModModifiers() {
         // Add mods to classloader and load mixins
         File[] modFiles = modsDirectory.listFiles();
         if (modFiles == null) {
@@ -216,12 +234,12 @@ public class ModLibLauncher {
                 try (ZipFile zip = new ZipFile(file)) {
                     loadMod(file.getName(), new ZipFileProvider(zip));
                 } catch (ZipException exception) {
-                    System.err.printf("Potentially corrupted mod file \"%s\"%n", file);
-                    exception.printStackTrace();
+                    Logger.err("Potentially corrupted mod file \"%s\"", file);
+                    Logger.err(exception);
                 }
             } catch (IOException | ParseException exception) {
-                System.err.println("Exception trying to read meta for mod " + file + ":");
-                exception.printStackTrace();
+                Logger.err("Exception trying to read mod meta file \"%s\":", file);
+                Logger.err(exception);
             }
         }
     }
@@ -229,7 +247,7 @@ public class ModLibLauncher {
     private void loadMod(String pathName, FileProvider provider) throws IOException, ParseException {
         Optional<String> optional = Arrays.stream(META_FILES).filter(provider::exists).findFirst();
         if (!optional.isPresent()) {
-            System.err.printf("Could not find a meta file for mod file \"%s\"%n", pathName);
+            Logger.err("Could not find a meta file for mod file \"%s\"", pathName);
             return;
         }
 
@@ -246,11 +264,22 @@ public class ModLibLauncher {
             }
 
             String name = metadata.get("name").asString();
-
             boolean modEnabled = settings.get(Boolean.class, "mod-" + name + "-enabled", true);
+            if (!modEnabled) {
+                return;
+            }
+
             String mixinsPath = name + ".mixins.json";
-            if (modEnabled && provider.exists(mixinsPath)) {
+            if (provider.exists(mixinsPath)) {
                 Mixins.addConfiguration(mixinsPath);
+            }
+
+            String widenerPath = name + ".accessWidener";
+            if (provider.exists(widenerPath)) {
+                AccessWidenerReader widenerReader = new AccessWidenerReader(widenerTransformer.getWidener());
+                try (InputStream stream = provider.getStream(widenerPath)) {
+                    widenerReader.read(new BufferedReader(new InputStreamReader(stream)));
+                }
             }
         }
     }

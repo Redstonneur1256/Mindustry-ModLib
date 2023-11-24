@@ -9,6 +9,7 @@ anuken-mindustry = { module = "com.github.Anuken.Mindustry:core", version.ref = 
 asm-tree = { module = "org.ow2.asm:asm-tree", version.ref = "asm" }
 asm-commons = { module = "org.ow2.asm:asm-commons", version.ref = "asm" }
 asm-util = { module = "org.ow2.asm:asm-util", version.ref = "asm" }
+accesswidener = "net.fabricmc:access-widener:2.1.0"
 mixin = "org.spongepowered:mixin:0.8.5"
 gson = "com.google.code.gson:gson:2.10.1"
 hjson = "org.hjson:hjson:3.0.0"

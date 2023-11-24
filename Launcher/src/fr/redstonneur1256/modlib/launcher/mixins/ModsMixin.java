@@ -7,8 +7,8 @@ import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import arc.util.Log;
 import arc.util.Time;
+import fr.redstonneur1256.modlib.launcher.ModLibClassLoader;
 import fr.redstonneur1256.modlib.launcher.ModLibLauncher;
-import fr.redstonneur1256.modlib.launcher.mixin.MixinClassLoader;
 import mindustry.Vars;
 import mindustry.core.Version;
 import mindustry.mod.Mod;
@@ -28,19 +28,11 @@ import static mindustry.Vars.headless;
 @Mixin(Mods.class)
 public abstract class ModsMixin {
 
-    @Shadow
-    Seq<Mods.LoadedMod> mods;
-    @Shadow
-    private ObjectMap<Class<?>, Mods.ModMeta> metas;
-
-    @Shadow
-    public abstract Mods.ModMeta findMeta(Fi file);
-
-    @Shadow
-    public abstract boolean skipModLoading();
-
-    @Shadow
-    private boolean requiresReload;
+    @Shadow Seq<Mods.LoadedMod> mods;
+    private @Shadow ObjectMap<Class<?>, Mods.ModMeta> metas;
+    public abstract @Shadow Mods.ModMeta findMeta(Fi file);
+    public abstract @Shadow boolean skipModLoading();
+    private @Shadow boolean requiresReload;
 
     /**
      * @author Redstonneur1256
@@ -108,7 +100,7 @@ public abstract class ModsMixin {
                 }
             }
 
-            MixinClassLoader loader = null;
+            ModLibClassLoader loader = null;
 
             //make sure the main class exists before loading it; if it doesn't just don't put it there
             //if the mod is explicitly marked as java, try loading it anyway
